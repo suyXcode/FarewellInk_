@@ -303,8 +303,5 @@ def init_db():
             db.session.commit()
         print('✅  FarewellInk 2026 — Database ready.')
 
-if __name__ == '__main__':
-    import eventlet
-    import eventlet.wsgi
-    init_db()
-    socketio.run(app, debug=True, host='0.0.0.0', port=5000, use_reloader=False)
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=5000)
