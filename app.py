@@ -33,7 +33,7 @@ app.config.update(
 
 db.init_app(app)
 csrf     = CSRFProtect(app)
-socketio = SocketIO(app, cors_allowed_origins='*', async_mode='eventlet')
+socketio = SocketIO(app, cors_allowed_origins='*', async_mode='threading')
 
 SIG_FOLDER.mkdir(parents=True, exist_ok=True)
 PHOTO_FOLDER.mkdir(parents=True, exist_ok=True)
