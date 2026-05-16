@@ -1,7 +1,7 @@
 Flask
 Flask-SQLAlchemy
 Flask-SocketIO
-Flask-WT
+Flask-WTF
 Pillow
 qrcode
 python-dotenv
