@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+{% block title %}{{ sig.name }}'s Signature — FarewellInk 2026{% endblock %}
+
+{% block content %}
+{% set theme_colors = {
+  'gold':   {'from':'#2a1f0e','accent':'#e2c97e'},
+  'purple': {'from':'#1a0a2e','accent':'#9b59b6'},
+  'blue':   {'from':'#0a1628','accent':'#3498db'},
+  'green':  {'from':'#0a2010','accent':'#27ae60'},
+  'rose':   {'from':'#2a0a14','accent':'#e91e8c'},
+  'orange': {'from':'#2a1400','accent':'#e67e22'},
+} %}
+{% set tc = theme_colors.get(sig.card_theme, theme_colors['gold']) %}
+
+<section class="detail-section">
+<div class="container" style="max-width:760px">
+
+  <a href="{{ url_for('wall') }}" class="btn fi-btn-ghost btn-sm mb-4">
+    <i class="fas fa-arrow-left me-1"></i> Back to Wall
+  </a>
+
+  <div class="glass-card detail-card overflow-hidden" data-aos="zoom-in"
+       style="border-color:{{ tc.accent }}33">
+
+    <!-- Banner -->
+    <div class="detail-banner"
+         style="background:linear-gradient(135deg,{{ tc.from }} 0%,#0d0d1a 100%)">
+      <div class="detail-banner-inner">
+        {% if sig.profile_photo %}
+          <img src="{{ url_for('static', filename=sig.profile_photo) }}"
+               class="detail-avatar-img" alt="{{ sig.name }}"/>
+        {% else %}
+          <div class="detail-avatar" style="background:linear-gradient(135deg,{{ tc.from }},{{ tc.accent }})">
+            {{ sig.name[0].upper() }}
+          </div>
+        {% endif %}
+        <div class="detail-banner-text">
+          <h2 class="detail-name mb-0"
+              style="font-family:'{{ sig.font }}',cursive;color:{{ tc.accent }}">
+            {{ sig.name }}
+          </h2>
+          {% if sig.nickname %}
+          <p class="detail-nick">"{{ sig.nickname }}"</p>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-body p-3 p-lg-4">
+
+      <!-- Tags -->
+      <div class="detail-tags mb-4">
+        <span class="fi-badge" style="border-color:{{ tc.accent }}44;color:{{ tc.accent }}">
+          {{ sig.branch }}
+        </span>
+        <span class="fi-badge-outline">Class of {{ sig.graduation_year }}</span>
+        <span class="fi-badge-outline">{{ sig.font }} font</span>
+        <span class="fi-badge-outline">{{ sig.card_theme|title }} theme</span>
+      </div>
+
+      <!-- Signature image -->
+      {% if sig.signature_image %}
+      <div class="detail-sig-wrap mb-4"
+           style="background:{{ tc.from }};border-color:{{ tc.accent }}22">
+        <img src="{{ url_for('static', filename=sig.signature_image) }}"
+             alt="{{ sig.name }}'s signature" class="detail-sig"/>
+      </div>
+      {% endif %}
+
+      <!-- Message -->
+      <blockquote class="fi-quote-detail mb-4"
+                  style="border-left-color:{{ tc.accent }}">
+        {{ sig.message }}
+      </blockquote>
+
+      <!-- Favourite memory -->
+      {% if sig.favorite_memory %}
+      <div class="fav-memory mb-4" style="border-color:{{ tc.accent }}22">
+        <div class="fav-label">
+          <i class="fas fa-heart me-2" style="color:{{ tc.accent }}"></i>Favourite Memory
+        </div>
+        <p class="mb-0">{{ sig.favorite_memory }}</p>
+      </div>
+      {% endif %}
+
+      <!-- Footer row -->
+      <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
+        <span class="text-muted small">
+          <i class="fas fa-calendar-alt me-1"></i>
+          {{ sig.created_at.strftime('%B %d, %Y') }}
+        </span>
+        <!-- Reactions -->
+        <div class="reaction-row">
+          {% for emoji,kind,attr in [('❤️','likes','likes'),('🔥','fires','fires'),('🎓','caps','caps')] %}
+          <button class="react-btn" data-id="{{ sig.id }}" data-kind="{{ kind }}">
+            {{ emoji }} <span class="react-count" id="{{ attr }}Count">
+              {{ sig.likes if attr=='likes' else sig.fires if attr=='fires' else sig.caps }}
+            </span>
+          </button>
+          {% endfor %}
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="d-flex gap-3 flex-wrap">
+        <a href="{{ url_for('download_png', sig_id=sig.id) }}"
+           class="btn fi-btn-primary btn-sm">
+          <i class="fas fa-download me-1"></i> Download PNG
+        </a>
+        <button class="btn fi-btn-ghost btn-sm" onclick="shareCard()">
+          <i class="fas fa-share-alt me-1"></i> Share
+        </button>
+        <a href="{{ url_for('sign') }}" class="btn fi-btn-ghost btn-sm">
+          <i class="fas fa-pen-nib me-1"></i> Sign Too
+        </a>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Reactions
+document.querySelectorAll('.react-btn').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    btn.style.transform = 'scale(1.4)';
+    setTimeout(() => btn.style.transform = '', 250);
+    const res = await fetch(`/api/react/${btn.dataset.id}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ kind: btn.dataset.kind })
+    });
+    const d = await res.json();
+    document.getElementById('likesCount').textContent = d.likes;
+    document.getElementById('firesCount').textContent = d.fires;
+    document.getElementById('capsCount').textContent  = d.caps;
+  });
+});
+
+// Share
+function shareCard() {
+  if (navigator.share) {
+    navigator.share({
+      title: "{{ sig.name }}'s Farewell Signature — FarewellInk 2026",
+      url: location.href
+    });
+  } else {
+    navigator.clipboard.writeText(location.href);
+    const btn = event.target.closest('button');
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fas fa-check me-1"></i> Copied!';
+    setTimeout(() => btn.innerHTML = orig, 2000);
+  }
+}
+</script>
+{% endblock %}

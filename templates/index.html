@@ -1,0 +1,162 @@
+{% extends 'base.html' %}
+{% block title %}FarewellInk — Class of 2026 🎓{% endblock %}
+{% block content %}
+
+<!-- HERO -->
+<section class="fi-hero" id="hero">
+  <canvas id="particleCanvas"></canvas>
+  <div class="floating-caps" aria-hidden="true">
+    {% for i in range(14) %}<span class="fc fc-{{i}}">🎓</span>{% endfor %}
+  </div>
+
+  <div class="hero-content container text-center">
+    <div class="hero-badge" data-aos="fade-down">✨ Class of 2026</div>
+
+    <h1 class="hero-title" data-aos="fade-up" data-aos-delay="100">
+      Leave Your <span class="gradient-text">Signature</span><br/>
+      Before We Graduate <span class="cap-bounce">🎓</span>
+    </h1>
+
+    <p class="hero-subtitle" data-aos="fade-up" data-aos-delay="200">
+      <span id="typedQuote"></span><span class="cursor-blink">|</span>
+    </p>
+
+    <div class="hero-stats" data-aos="fade-up" data-aos-delay="280">
+      <div class="stat-chip">
+        <i class="fas fa-signature"></i>
+        <strong id="totalSigs">{{ total }}</strong> signatures &amp; counting
+      </div>
+    </div>
+
+    <div class="hero-btns" data-aos="fade-up" data-aos-delay="360">
+      <a href="{{ url_for('sign') }}" class="btn fi-btn-primary btn-lg">
+        <i class="fas fa-pen-nib me-2"></i>Sign Now
+      </a>
+      <a href="{{ url_for('wall') }}" class="btn fi-btn-ghost btn-lg">
+        <i class="fas fa-images me-2"></i>Memory Wall
+      </a>
+    </div>
+
+    <div class="qr-teaser" data-aos="zoom-in" data-aos-delay="500">
+      <img src="{{ url_for('qr_code') }}" alt="QR" class="qr-img"/>
+      <p class="qr-label"><i class="fas fa-qrcode me-1"></i>Scan to sign from phone</p>
+    </div>
+  </div>
+  <div class="scroll-hint"><i class="fas fa-chevron-down"></i></div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="fi-section how-section">
+  <div class="container">
+    <h2 class="section-title text-center" data-aos="fade-up">How It Works</h2>
+    <p class="section-sub text-center mb-5" data-aos="fade-up">Four simple steps to leave your mark forever</p>
+    <div class="row g-4">
+      {% for icon,num,title,desc in [
+        ('fa-pen-nib','1','Draw','Use mouse, finger, or stylus to create your personal signature on the canvas.'),
+        ('fa-palette','2','Decorate','Pick a pen color, add emoji stamps, and choose a beautiful card theme.'),
+        ('fa-user-edit','3','Fill','Add your name, branch, and a heartfelt farewell message for your batch.'),
+        ('fa-paper-plane','4','Publish','Your signature appears live on the Memory Wall for everyone to see forever.'),
+      ] %}
+      <div class="col-6 col-lg-3" data-aos="fade-up" data-aos-delay="{{ loop.index * 80 }}">
+        <div class="step-card glass-card text-center p-4">
+          <div class="step-num">{{ num }}</div>
+          <div class="step-icon"><i class="fas {{ icon }}"></i></div>
+          <h5>{{ title }}</h5>
+          <p>{{ desc }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</section>
+
+<!-- PREVIEW -->
+<section class="fi-section preview-section">
+  <div class="container">
+    <h2 class="section-title text-center" data-aos="fade-up">Recent Signatures</h2>
+    <p class="section-sub text-center mb-5" data-aos="fade-up">Your classmates are already signing — join them!</p>
+    <div class="row g-3" id="previewCards">
+      <div class="col-12 text-center py-5" id="previewLoading">
+        <div class="fi-spinner mx-auto"></div>
+      </div>
+    </div>
+    <div class="text-center mt-5" data-aos="fade-up">
+      <a href="{{ url_for('wall') }}" class="btn fi-btn-ghost">
+        See All Signatures <i class="fas fa-arrow-right ms-2"></i>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- QUOTE BANNER -->
+<section class="quote-banner" data-aos="fade-up">
+  <div class="container text-center">
+    <blockquote class="fi-quote">"{{ quote }}"</blockquote>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Typed quote
+const quote = {{ quote|tojson }};
+let qi = 0;
+const qEl = document.getElementById('typedQuote');
+const cursor = document.querySelector('.cursor-blink');
+function typeQ() {
+  if (qi < quote.length) {
+    qEl.textContent += quote[qi++];
+    setTimeout(typeQ, 35);
+  } else if (cursor) {
+    cursor.style.display = 'none';
+  }
+}
+setTimeout(typeQ, 900);
+
+// Preview cards
+fetch('/api/signatures?page=1')
+  .then(r => r.json())
+  .then(data => {
+    const wrap = document.getElementById('previewCards');
+    document.getElementById('previewLoading')?.remove();
+    if (!data.signatures.length) {
+      wrap.innerHTML = '<div class="col-12 text-center text-muted py-5 fs-5">Be the first to sign! 🎓</div>';
+      return;
+    }
+    data.signatures.slice(0, 6).forEach(s => {
+      const themes = {
+        gold:'linear-gradient(135deg,#2a1f0e,#1a1200)',
+        purple:'linear-gradient(135deg,#1a0a2e,#0d0020)',
+        blue:'linear-gradient(135deg,#0a1628,#061020)',
+        green:'linear-gradient(135deg,#0a2010,#051008)',
+        rose:'linear-gradient(135deg,#2a0a14,#18050c)',
+        orange:'linear-gradient(135deg,#2a1400,#180a00)',
+      };
+      const bg = themes[s.card_theme] || themes.gold;
+      const avatar = s.profile_photo
+        ? `<img src="/static/${s.profile_photo}" class="preview-avatar" alt="photo"/>`
+        : `<div class="preview-avatar-placeholder">${s.name[0].toUpperCase()}</div>`;
+      const sig = s.signature_image
+        ? `<img src="/static/${s.signature_image}" class="preview-sig" alt="sig"/>`
+        : `<div class="preview-sig no-img"><i class="fas fa-signature"></i></div>`;
+      wrap.insertAdjacentHTML('beforeend', `
+        <div class="col-md-4 col-sm-6" data-aos="zoom-in">
+          <a href="/signature/${s.id}" class="preview-card glass-card d-block text-decoration-none" style="background:${bg}">
+            ${sig}
+            <div class="preview-meta p-3">
+              <div class="d-flex align-items-center gap-2 mb-2">
+                ${avatar}
+                <div>
+                  <strong style="font-family:'${s.font}',cursive;color:${s.pen_color}">${s.name}</strong>
+                  <div class="preview-branch">${s.branch} · ${s.graduation_year}</div>
+                </div>
+              </div>
+              <p class="preview-msg">${s.message.substring(0,80)}…</p>
+            </div>
+          </a>
+        </div>`);
+    });
+  });
+</script>
+{% endblock %}

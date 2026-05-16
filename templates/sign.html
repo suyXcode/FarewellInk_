@@ -1,0 +1,219 @@
+{% extends 'base.html' %}
+{% block title %}Sign — FarewellInk 2026 🎓{% endblock %}
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/sign.css') }}"/>
+{% endblock %}
+
+{% block content %}
+<section class="sign-section">
+<div class="container-fluid px-3 px-lg-4">
+
+  <div class="text-center mb-4 pt-2" data-aos="fade-down">
+    <h2 class="section-title">Leave Your Mark 🖋️</h2>
+    <p class="section-sub">Draw · Decorate · Submit · Stay Forever</p>
+  </div>
+
+  <div class="row g-3 g-lg-4">
+
+    <!-- ══ LEFT : CANVAS COLUMN ══ -->
+    <div class="col-lg-6">
+
+      <!-- Canvas Card -->
+      <div class="glass-card canvas-card mb-3">
+        <div class="canvas-top-bar">
+          <span class="canvas-title"><i class="fas fa-pen-nib me-2"></i>Draw Signature</span>
+          <div class="canvas-controls">
+            <label class="ctrl-lbl">Size</label>
+            <input type="range" id="strokeWidth" min="1" max="10" value="3" class="fi-range"/>
+            <label class="ctrl-lbl">Color</label>
+            <input type="color" id="penColor" value="#e2c97e" class="fi-color" title="Pen color"/>
+          </div>
+        </div>
+
+        <!-- BG Chooser -->
+        <div class="bg-chooser">
+          <span class="ctrl-lbl">Canvas BG</span>
+          <div class="bg-options">
+            <button class="bg-opt active" data-bg="dark"     title="Dark">🌑</button>
+            <button class="bg-opt"        data-bg="light"    title="Light">☀️</button>
+            <button class="bg-opt"        data-bg="gold"     title="Gold Glow">✨</button>
+            <button class="bg-opt"        data-bg="purple"   title="Purple Night">🌌</button>
+            <button class="bg-opt"        data-bg="grid"     title="Grid">🔲</button>
+            <button class="bg-opt"        data-bg="midnight" title="Midnight Blue">🌊</button>
+          </div>
+        </div>
+
+        <!-- Canvas Wrapper -->
+        <div class="canvas-wrap" id="canvasWrap">
+          <!-- Background canvas (bottom layer) -->
+          <canvas id="bgCanvas"></canvas>
+          <!-- Signature Pad canvas (top layer) -->
+          <canvas id="signaturePad"></canvas>
+          <!-- Sticker overlay -->
+          <div id="stickerOverlay"></div>
+          <div class="canvas-hint" id="canvasHint">
+            <i class="fas fa-hand-pointer"></i>
+            <span>Draw here</span>
+          </div>
+        </div>
+
+        <!-- Sticker Bar -->
+        <div class="sticker-bar">
+          <span class="ctrl-lbl">Stamps</span>
+          <div class="sticker-list" id="stickerList">
+            {% for e in ['🎓','❤️','🌟','🎉','🎊','🏆','🌸','💫','✨','🎵','🚀','🔥','😊','💪','🙌'] %}
+            <button class="sticker-btn" data-emoji="{{ e }}">{{ e }}</button>
+            {% endfor %}
+          </div>
+          <button class="btn-clear-stickers" id="clearStickers" title="Clear stamps">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+
+        <!-- Canvas Actions -->
+        <div class="canvas-actions">
+          <button class="ca-btn" id="btnClear"><i class="fas fa-trash-alt"></i><span>Clear</span></button>
+          <button class="ca-btn" id="btnUndo"><i class="fas fa-undo"></i><span>Undo</span></button>
+          <button class="ca-btn" id="btnReplay"><i class="fas fa-play"></i><span>Replay</span></button>
+        </div>
+      </div>
+
+      <!-- Font Card -->
+      <div class="glass-card font-card p-3 mb-3">
+        <div class="ctrl-lbl mb-2"><i class="fas fa-font me-1"></i> Signature Font</div>
+        <div class="font-grid">
+          {% for f in ['Pacifico','Great Vibes','Dancing Script','Lobster','Allura'] %}
+          <label class="font-chip">
+            <input type="radio" name="fontChoice" value="{{ f }}" {% if f=='Pacifico' %}checked{% endif %}/>
+            <span style="font-family:'{{ f }}',cursive">{{ f }}</span>
+          </label>
+          {% endfor %}
+        </div>
+        <div class="font-preview mt-3" id="fontPreview" style="font-family:'Pacifico',cursive">
+          Your Name Here
+        </div>
+      </div>
+
+      <!-- Card Theme -->
+      <div class="glass-card theme-card p-3">
+        <div class="ctrl-lbl mb-2"><i class="fas fa-palette me-1"></i> Card Theme</div>
+        <div class="theme-grid" id="themeGrid">
+          {% for t,label,c1,c2 in [
+            ('gold',    'Gold',    '#2a1f0e','#e2c97e'),
+            ('purple',  'Purple',  '#1a0a2e','#9b59b6'),
+            ('blue',    'Ocean',   '#0a1628','#3498db'),
+            ('green',   'Forest',  '#0a2010','#27ae60'),
+            ('rose',    'Rose',    '#2a0a14','#e91e8c'),
+            ('orange',  'Sunset',  '#2a1400','#e67e22'),
+          ] %}
+          <label class="theme-chip">
+            <input type="radio" name="cardTheme" value="{{ t }}" {% if t=='gold' %}checked{% endif %}/>
+            <span class="theme-swatch" style="background:linear-gradient(135deg,{{ c1 }},{{ c2 }})">
+              <span class="theme-label">{{ label }}</span>
+            </span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+
+    </div><!-- /col LEFT -->
+
+    <!-- ══ RIGHT : FORM COLUMN ══ -->
+    <div class="col-lg-6">
+      <div class="glass-card form-card p-3 p-lg-4">
+        <h5 class="form-card-title"><i class="fas fa-user-edit me-2"></i>Your Details</h5>
+
+        <!-- Profile Photo Upload -->
+        <div class="photo-upload-area mb-4" id="photoUploadArea">
+          <div class="photo-preview" id="photoPreview">
+            <i class="fas fa-camera"></i>
+            <span>Add Photo</span>
+          </div>
+          <div class="photo-info">
+            <div class="ctrl-lbl">Profile Photo <span class="text-muted">(optional)</span></div>
+            <p class="photo-hint">Appears on your signature card</p>
+            <label class="btn fi-btn-ghost btn-sm photo-choose-btn">
+              <i class="fas fa-upload me-1"></i> Choose Photo
+              <input type="file" id="photoInput" accept="image/*" hidden/>
+            </label>
+          </div>
+        </div>
+
+        <form id="signForm" novalidate>
+          <div class="row g-3 mb-3">
+            <div class="col-12">
+              <label class="fi-label">Full Name *</label>
+              <input type="text" class="form-control fi-input" id="name"
+                     placeholder="e.g. Arjun Sharma" maxlength="120" required/>
+            </div>
+            <div class="col-12">
+              <label class="fi-label">Nickname <small class="text-muted">(optional)</small></label>
+              <input type="text" class="form-control fi-input" id="nickname"
+                     placeholder="e.g. AJ" maxlength="80"/>
+            </div>
+          </div>
+
+          <div class="row g-3 mb-3">
+            <div class="col-7">
+              <label class="fi-label">Branch / Department *</label>
+              <select class="form-select fi-input" id="branch" required>
+                <option value="" disabled selected>Select branch</option>
+                {% for b in ['Computer Science','Electronics','Mechanical','Civil',
+                              'Chemical','IT','Electrical','Biotechnology','Other'] %}
+                <option>{{ b }}</option>
+                {% endfor %}
+              </select>
+            </div>
+            <div class="col-5">
+              <label class="fi-label">Year *</label>
+              <input type="number" class="form-control fi-input" id="graduation_year"
+                     value="2026" min="2022" max="2035" required/>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label class="fi-label">Farewell Message *</label>
+            <textarea class="form-control fi-input" id="message" rows="4"
+                      placeholder="What would you like to tell your classmates?" maxlength="2000" required></textarea>
+            <div class="text-end small mt-1 text-muted"><span id="msgCount">0</span>/2000</div>
+          </div>
+
+          <div class="mb-4">
+            <label class="fi-label">Favourite Memory <small class="text-muted">(optional)</small></label>
+            <textarea class="form-control fi-input" id="favorite_memory" rows="3"
+                      placeholder="A memory you'll never forget…" maxlength="2000"></textarea>
+          </div>
+
+          <button type="submit" class="btn fi-btn-primary w-100 submit-btn" id="submitBtn">
+            <span class="submit-text"><i class="fas fa-paper-plane me-2"></i>Submit Signature</span>
+            <span class="submit-spinner d-none"><i class="fas fa-spinner fa-spin me-2"></i>Saving…</span>
+          </button>
+        </form>
+      </div>
+    </div><!-- /col RIGHT -->
+
+  </div><!-- /row -->
+</div>
+</section>
+
+<!-- SUCCESS MODAL -->
+<div class="modal fade" id="successModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content fi-modal text-center p-4 p-lg-5">
+      <div class="success-icon">🎓</div>
+      <h3 class="mt-3 mb-2">Signature Saved!</h3>
+      <p class="fi-quote-sm" id="modalQuote"></p>
+      <div class="d-flex gap-3 justify-content-center mt-4 flex-wrap">
+        <a href="{{ url_for('wall') }}" class="btn fi-btn-primary">View Memory Wall</a>
+        <a href="{{ url_for('sign') }}" class="btn fi-btn-ghost">Sign Again</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.7/dist/signature_pad.umd.min.js"></script>
+<script src="{{ url_for('static', filename='js/sign.js') }}"></script>
+{% endblock %}

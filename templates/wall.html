@@ -1,0 +1,74 @@
+{% extends 'base.html' %}
+{% block title %}Memory Wall — FarewellInk 2026 🎓{% endblock %}
+
+{% block content %}
+<section class="wall-section">
+<div class="container-fluid px-3 px-lg-4">
+
+  <div class="text-center mb-4" data-aos="fade-down">
+    <h2 class="section-title">Memory Wall 🏛️</h2>
+    <p class="section-sub">Every signature is a promise to remember — Class of 2026</p>
+  </div>
+
+  <!-- Filters -->
+  <div class="wall-filters glass-card mb-4" data-aos="fade-up">
+    <div class="d-flex flex-wrap gap-3 align-items-center">
+      <div class="search-wrap flex-grow-1">
+        <i class="fas fa-search search-icon"></i>
+        <input type="text" id="searchInput" class="form-control fi-input ps-5"
+               placeholder="Search by name…" autocomplete="off"/>
+      </div>
+      <select class="form-select fi-input" id="branchFilter" style="max-width:180px">
+        <option value="">All Branches</option>
+        {% for b in branches %}
+        <option value="{{ b }}">{{ b }}</option>
+        {% endfor %}
+      </select>
+      <select class="form-select fi-input" id="themeFilter" style="max-width:150px">
+        <option value="">All Themes</option>
+        <option value="gold">Gold</option>
+        <option value="purple">Purple</option>
+        <option value="blue">Ocean</option>
+        <option value="green">Forest</option>
+        <option value="rose">Rose</option>
+        <option value="orange">Sunset</option>
+      </select>
+      <div class="wall-count-chip">
+        <i class="fas fa-users me-1"></i>
+        <span id="wallCount">—</span> signatures
+      </div>
+    </div>
+  </div>
+
+  <!-- Grid -->
+  <div class="wall-grid" id="wallGrid"></div>
+
+  <!-- Loader -->
+  <div class="text-center py-5" id="wallLoading">
+    <div class="fi-spinner mx-auto"></div>
+  </div>
+
+  <!-- Sentinel for infinite scroll -->
+  <div id="loadMoreSentinel" class="py-3"></div>
+
+</div>
+</section>
+
+<!-- MODAL -->
+<div class="modal fade" id="sigModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg modal-dialog-scrollable">
+    <div class="modal-content fi-modal">
+      <div class="modal-header border-0 pb-0">
+        <button type="button" class="btn-close btn-close-white ms-auto"
+                data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body px-4 pb-4" id="sigModalBody"></div>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/wall.js') }}"></script>
+{% endblock %}

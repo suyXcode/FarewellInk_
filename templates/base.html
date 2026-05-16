@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+  <meta name="theme-color" content="#060610"/>
+  <meta name="description" content="FarewellInk — Class of 2026 Digital Signature Wall"/>
+<!-- Site Icon / Favicon -->
+<link rel="icon" type="image/x-icon"     href="{{ url_for('static', filename='favicon.ico') }}"/>
+<link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}"/>
+<link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}"/>
+<link rel="apple-touch-icon"             href="{{ url_for('static', filename='favicon-32x32.png') }}"/>
+  <title>{% block title %}FarewellInk 🎓{% endblock %}</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400&family=DM+Sans:wght@300;400;500;600&family=Pacifico&family=Great+Vibes&family=Dancing+Script:wght@700&family=Lobster&family=Allura&display=swap" rel="stylesheet"/>
+
+  <!-- Icons & Bootstrap -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  {% block head %}{% endblock %}
+</head>
+<body>
+
+<!-- LOADING SCREEN -->
+<div id="loading-screen">
+  <div class="loader-content">
+    <div class="cap-spin">🎓</div>
+    <p class="loader-text">FarewellInk 2026</p>
+    <div class="loader-bar"><div class="loader-fill"></div></div>
+  </div>
+</div>
+
+<!-- NAVBAR -->
+<nav class="navbar navbar-expand-lg fi-navbar" id="mainNav">
+  <div class="container-fluid px-3 px-lg-4">
+    <a class="navbar-brand fi-brand" href="{{ url_for('index') }}">
+      <span>🎓</span> FarewellInk
+    </a>
+    <div class="d-flex align-items-center gap-2 ms-auto d-lg-none">
+      <button class="theme-toggle" id="themeToggleMob"><i class="fas fa-sun" id="themeIconMob"></i></button>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navMenu">
+        <i class="fas fa-bars" style="color:var(--gold)"></i>
+      </button>
+    </div>
+    <div class="collapse navbar-collapse" id="navMenu">
+      <ul class="navbar-nav mx-auto gap-1">
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='index' %}active{% endif %}" href="{{ url_for('index') }}"><i class="fas fa-home me-1"></i>Home</a></li>
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='sign' %}active{% endif %}"  href="{{ url_for('sign') }}"><i class="fas fa-pen-nib me-1"></i>Sign</a></li>
+        <li class="nav-item"><a class="nav-link {% if request.endpoint=='wall' %}active{% endif %}"  href="{{ url_for('wall') }}"><i class="fas fa-images me-1"></i>Memory Wall</a></li>
+      </ul>
+      <div class="d-flex align-items-center gap-2">
+        <div class="visitor-chip" id="visitorChip">
+          <span class="pulse-dot"></span><span id="visitorCount">1</span> online
+        </div>
+        <button class="theme-toggle d-none d-lg-flex" id="themeToggle"><i class="fas fa-sun" id="themeIcon"></i></button>
+        <button class="music-btn d-none d-lg-flex" id="musicToggle" title="Toggle music"><i class="fas fa-music"></i></button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- FLASH -->
+{% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+    <div class="flash-container">
+      {% for cat,msg in messages %}
+      <div class="alert alert-{{cat}} alert-dismissible fade show fi-alert">
+        {{msg}}<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+      </div>
+      {% endfor %}
+    </div>
+  {% endif %}
+{% endwith %}
+
+<main>{% block content %}{% endblock %}</main>
+
+<!-- FOOTER -->
+<footer class="fi-footer">
+  <div class="container text-center">
+    <div class="footer-brand">🎓 FarewellInk — Class of 2026</div>
+    <p class="footer-sub mt-1">Where every signature becomes a memory forever · <a href="{{ url_for('admin_login') }}">Admin</a></p>
+  </div>
+</footer>
+
+<!-- TOAST -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index:9999">
+  <div id="newSigToast" class="toast fi-toast" role="alert">
+    <div class="toast-body"><i class="fas fa-pen-nib me-2 text-warning"></i><span id="toastMsg">Someone just signed!</span></div>
+  </div>
+</div>
+
+<!-- CONFETTI -->
+<canvas id="confettiCanvas" style="position:fixed;inset:0;pointer-events:none;z-index:9990;"></canvas>
+
+<!-- MUSIC -->
+<audio id="bgMusic" loop>
+  <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg"/>
+</audio>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/aos/2.3.4/aos.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.6.1/socket.io.min.js"></script>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

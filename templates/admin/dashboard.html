@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Admin Dashboard — FarewellInk 2026</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"/>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}"/>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/admin.css') }}"/>
+</head>
+<body>
+
+<div class="admin-layout">
+
+  <!-- Sidebar -->
+  <aside class="admin-sidebar" id="adminSidebar">
+    <div class="sidebar-brand">
+      <span>🎓</span>
+      <span class="brand-text">FarewellInk</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a href="{{ url_for('admin_dashboard') }}" class="snav-link active">
+        <i class="fas fa-chart-bar"></i><span>Dashboard</span>
+      </a>
+      <a href="{{ url_for('wall') }}" target="_blank" class="snav-link">
+        <i class="fas fa-images"></i><span>Memory Wall</span>
+      </a>
+      <a href="{{ url_for('admin_export') }}" class="snav-link">
+        <i class="fas fa-file-csv"></i><span>Export CSV</span>
+      </a>
+    </nav>
+    <div class="sidebar-footer">
+      <a href="{{ url_for('admin_logout') }}" class="snav-link logout-link">
+        <i class="fas fa-sign-out-alt"></i><span>Logout</span>
+      </a>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="admin-main">
+
+    <!-- Top Bar -->
+    <div class="admin-topbar">
+      <button class="sidebar-toggle" id="sidebarToggle">
+        <i class="fas fa-bars"></i>
+      </button>
+      <h1 class="admin-page-title">Dashboard</h1>
+      <div class="topbar-actions">
+        <a href="{{ url_for('admin_export') }}" class="btn fi-btn-ghost btn-sm">
+          <i class="fas fa-download me-1"></i>Export
+        </a>
+        <a href="{{ url_for('admin_logout') }}" class="btn btn-sm logout-btn">
+          <i class="fas fa-sign-out-alt me-1"></i>Logout
+        </a>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-grid">
+      {% for val,lbl,icon,color in [
+        (total,         'Total',    'fa-signature',   '#e2c97e'),
+        (approved,      'Approved', 'fa-check-circle','#81c784'),
+        (pending,       'Pending',  'fa-clock',       '#ffd54f'),
+        (rejected,      'Hidden',   'fa-eye-slash',   '#ef9a9a'),
+        (visitor_count, 'Visitors', 'fa-users',       '#64b5f6'),
+      ] %}
+      <div class="stat-box">
+        <div class="stat-icon" style="color:{{ color }}"><i class="fas {{ icon }}"></i></div>
+        <div class="stat-val" style="color:{{ color }}">{{ val }}</div>
+        <div class="stat-lbl">{{ lbl }}</div>
+      </div>
+      {% endfor %}
+    </div>
+
+    <!-- Branches -->
+    <div class="admin-card mb-4">
+      <div class="admin-card-title">
+        <i class="fas fa-sitemap me-2"></i>Signatures by Branch
+      </div>
+      <div class="branch-chips">
+        {% for branch,count in branches %}
+        <span class="branch-chip">{{ branch }} <strong>{{ count }}</strong></span>
+        {% else %}
+        <span class="text-muted small">No data yet</span>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Search -->
+    <div class="admin-card mb-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="flex-grow-1" style="position:relative">
+          <i class="fas fa-search" style="position:absolute;left:.9rem;top:50%;transform:translateY(-50%);color:var(--text-muted)"></i>
+          <input type="text" id="adminSearch" class="form-control fi-input ps-5"
+                 placeholder="Search signatures by name…"/>
+        </div>
+        <span class="text-muted small">{{ recent|length }} shown</span>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div class="admin-card">
+      <div class="admin-card-title mb-3">
+        <i class="fas fa-list me-2"></i>Recent Signatures
+      </div>
+      <div class="table-responsive">
+        <table class="admin-table" id="sigTable">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Photo</th>
+              <th>Signature</th>
+              <th>Name / Branch</th>
+              <th>Year</th>
+              <th>Theme</th>
+              <th>Status</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for sig in recent %}
+            <tr id="row-{{ sig.id }}" class="sig-row" data-name="{{ sig.name|lower }}">
+              <td class="text-muted">{{ sig.id }}</td>
+              <td>
+                {% if sig.profile_photo %}
+                  <img src="{{ url_for('static', filename=sig.profile_photo) }}"
+                       class="admin-avatar" alt="photo"/>
+                {% else %}
+                  <div class="admin-avatar-placeholder">{{ sig.name[0].upper() }}</div>
+                {% endif %}
+              </td>
+              <td>
+                {% if sig.signature_image %}
+                  <img src="{{ url_for('static', filename=sig.signature_image) }}"
+                       class="sig-thumb" alt="sig"/>
+                {% else %}
+                  <span class="text-muted">—</span>
+                {% endif %}
+              </td>
+              <td>
+                <div style="font-family:'{{ sig.font }}',cursive;font-size:.95rem;color:var(--gold)">
+                  {{ sig.name }}
+                </div>
+                <div class="text-muted small">{{ sig.branch }}</div>
+              </td>
+              <td>{{ sig.graduation_year }}</td>
+              <td>
+                <span class="theme-dot theme-{{ sig.card_theme }}">{{ sig.card_theme|title }}</span>
+              </td>
+              <td>
+                <span class="status-badge status-{{ sig.status }}" id="status-{{ sig.id }}">
+                  {{ sig.status|title }}
+                </span>
+              </td>
+              <td class="text-muted small">{{ sig.created_at.strftime('%b %d, %Y') }}</td>
+              <td>
+                <div class="action-btns">
+                  <a href="{{ url_for('view_signature', sig_id=sig.id) }}" target="_blank"
+                     class="act-btn view-btn" title="View"><i class="fas fa-eye"></i></a>
+                  <button class="act-btn approve-btn" title="Approve"
+                          onclick="setStatus({{ sig.id }},'approved')">
+                    <i class="fas fa-check"></i>
+                  </button>
+                  <button class="act-btn pending-btn" title="Pending"
+                          onclick="setStatus({{ sig.id }},'pending')">
+                    <i class="fas fa-clock"></i>
+                  </button>
+                  <button class="act-btn delete-btn" title="Hide"
+                          onclick="deleteSig({{ sig.id }})">
+                    <i class="fas fa-eye-slash"></i>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="9" class="text-center text-muted py-5">No signatures yet.</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Sidebar toggle (mobile)
+document.getElementById('sidebarToggle')?.addEventListener('click', () => {
+  document.getElementById('adminSidebar').classList.toggle('open');
+});
+
+// Search filter
+document.getElementById('adminSearch')?.addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('.sig-row').forEach(row => {
+    row.style.display = row.dataset.name.includes(q) ? '' : 'none';
+  });
+});
+
+// Delete (soft)
+async function deleteSig(id) {
+  if (!confirm('Hide this signature from the public wall?')) return;
+  const btn = document.querySelector(`#row-${id} .delete-btn`);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+  try {
+    const res = await fetch(`/admin/delete/${id}`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'
+    });
+    const d = await res.json();
+    if (d.success) {
+      const row = document.getElementById(`row-${id}`);
+      if (row) {
+        row.style.transition = 'opacity .4s, transform .4s';
+        row.style.opacity = '0'; row.style.transform = 'translateX(20px)';
+        setTimeout(() => row.remove(), 420);
+      }
+      showToast('Signature hidden ✅', 'success');
+    }
+  } catch(e) {
+    showToast('Network error', 'danger');
+    if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-eye-slash"></i>'; }
+  }
+}
+
+// Status change
+async function setStatus(id, status) {
+  try {
+    const res = await fetch(`/admin/status/${id}`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ status })
+    });
+    const d = await res.json();
+    if (d.success) {
+      const el = document.getElementById(`status-${id}`);
+      if (el) {
+        el.className = `status-badge status-${status}`;
+        el.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+      }
+      const row = document.getElementById(`row-${id}`);
+      if (row) {
+        row.style.background = 'rgba(226,201,126,0.06)';
+        setTimeout(() => row.style.background = '', 1200);
+      }
+      showToast(`Status → ${status} ✅`, 'success');
+    }
+  } catch(e) { showToast('Network error', 'danger'); }
+}
+
+// Toast
+function showToast(msg, type='success') {
+  const old = document.getElementById('adminToast');
+  if (old) old.remove();
+  const t = document.createElement('div');
+  t.id = 'adminToast';
+  t.style.cssText = `position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;
+    background:rgba(13,13,30,.95);border:1px solid rgba(226,201,126,.25);
+    border-radius:12px;padding:.75rem 1.25rem;color:#f0ede6;font-size:.88rem;
+    backdrop-filter:blur(12px);max-width:300px;animation:fadeInUp .3s ease`;
+  t.textContent = msg;
+  document.body.appendChild(t);
+  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 3000);
+}
+</script>
+</body>
+</html>

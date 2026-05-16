@@ -1,0 +1,255 @@
+/* ═══════════════════════════════════════════════
+   FarewellInk — sign.css
+   ═══════════════════════════════════════════════ */
+
+.sign-section{
+  padding-top:5rem;padding-bottom:3rem;min-height:100svh;
+  background:
+    radial-gradient(ellipse at 15% 20%,rgba(226,201,126,.05) 0%,transparent 55%),
+    radial-gradient(ellipse at 85% 75%,rgba(100,80,200,.04) 0%,transparent 55%),
+    var(--deep);
+}
+
+/* ── Canvas Card ── */
+.canvas-card{padding:1.25rem 1.25rem .75rem}
+.canvas-top-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:.6rem;margin-bottom:.9rem;
+}
+.canvas-title{font-family:var(--font-display);color:var(--gold);font-size:1rem;font-weight:700}
+.canvas-controls{display:flex;align-items:center;gap:.7rem;flex-wrap:wrap}
+.ctrl-lbl{font-size:.72rem;color:var(--text-muted);white-space:nowrap;font-weight:500}
+
+.fi-range{
+  -webkit-appearance:none;width:75px;height:4px;border-radius:2px;
+  background:linear-gradient(90deg,var(--gold-dim),rgba(255,255,255,.1));
+  outline:none;cursor:pointer;
+}
+.fi-range::-webkit-slider-thumb{
+  -webkit-appearance:none;width:14px;height:14px;border-radius:50%;
+  background:var(--gold);cursor:pointer;border:2px solid #0d0a05;
+}
+.fi-color{
+  width:30px;height:30px;border-radius:50%;border:2px solid var(--glass-border);
+  background:none;cursor:pointer;padding:0;overflow:hidden;
+  transition:border-color var(--t-fast);
+}
+.fi-color:hover{border-color:var(--gold)}
+
+/* ── BG Chooser ── */
+.bg-chooser{
+  display:flex;align-items:center;gap:.6rem;flex-wrap:wrap;
+  margin-bottom:.8rem;padding:.5rem .75rem;
+  background:rgba(0,0,0,.15);border-radius:var(--r-sm);
+}
+.bg-options{display:flex;gap:.4rem;flex-wrap:wrap}
+.bg-opt{
+  width:30px;height:30px;border-radius:50%;border:2px solid var(--glass-border);
+  background:var(--glass-bg);cursor:pointer;font-size:.85rem;
+  display:flex;align-items:center;justify-content:center;
+  transition:all var(--t-fast);
+}
+.bg-opt:hover{border-color:var(--gold-dim);transform:scale(1.12)}
+.bg-opt.active{border-color:var(--gold);box-shadow:0 0 8px rgba(226,201,126,.3)}
+
+/* ── Canvas Wrap ── */
+.canvas-wrap{
+  position:relative;border-radius:var(--r-md);overflow:hidden;
+  border:1.5px dashed rgba(226,201,126,.2);
+  cursor:crosshair;
+  /* CRITICAL: prevents mobile scroll while drawing */
+  touch-action:none;
+  user-select:none;
+  -webkit-user-select:none;
+}
+.canvas-wrap.active{border-color:rgba(226,201,126,.5);border-style:solid}
+
+#bgCanvas-OLD{
+  position:absolute;inset:0;width:100%;
+  height:260px;display:block;pointer-events:none;
+}
+#signaturePad{
+  position:relative;z-index:2;display:block;width:100%;
+  height:260px;touch-action:none;background:transparent;
+}
+@media(min-width:992px){
+  #bgCanvas,#signaturePad{height:300px}
+}
+@media(max-width:480px){
+  #bgCanvas,#signaturePad{height:210px}
+}
+
+/* Sticker overlay */
+#stickerOverlay{
+  position:absolute;inset:0;z-index:3;pointer-events:none;overflow:hidden;
+}
+.sticker-item{
+  position:absolute;font-size:1.8rem;line-height:1;
+  cursor:pointer;pointer-events:all;user-select:none;
+  animation:stickerPop .25s cubic-bezier(.4,0,.2,1) both;
+  filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));
+}
+@keyframes stickerPop{from{transform:scale(0) rotate(-20deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+
+.canvas-hint{
+  position:absolute;inset:0;z-index:1;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  color:rgba(226,201,126,.3);font-size:.85rem;gap:.4rem;pointer-events:none;
+  transition:opacity .2s;
+}
+.canvas-hint i{font-size:1.8rem}
+.canvas-hint.hidden{opacity:0}
+
+/* ── Sticker Bar ── */
+.sticker-bar{
+  display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;
+  padding:.6rem .5rem;background:rgba(0,0,0,.12);
+  border-top:1px solid var(--glass-border);
+}
+.sticker-list{display:flex;gap:.3rem;flex-wrap:wrap;flex:1}
+.sticker-btn{
+  width:32px;height:32px;border-radius:var(--r-sm);border:1px solid var(--glass-border);
+  background:var(--glass-bg);cursor:pointer;font-size:1rem;
+  display:flex;align-items:center;justify-content:center;
+  transition:all var(--t-fast);
+}
+.sticker-btn:hover{background:rgba(226,201,126,.12);border-color:var(--gold-dim);transform:scale(1.18)}
+.sticker-btn:active{transform:scale(.9)}
+.btn-clear-stickers{
+  width:28px;height:28px;border-radius:50%;border:1px solid rgba(244,67,54,.25);
+  background:rgba(244,67,54,.08);color:#ef9a9a;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:.72rem;
+  transition:all var(--t-fast);flex-shrink:0;
+}
+.btn-clear-stickers:hover{background:rgba(244,67,54,.18);border-color:rgba(244,67,54,.4)}
+
+/* ── Canvas Actions ── */
+.canvas-actions{
+  display:flex;gap:.5rem;padding:.6rem .5rem .5rem;
+  border-top:1px solid var(--glass-border);
+}
+.ca-btn{
+  display:flex;align-items:center;gap:.35rem;
+  background:var(--glass-bg);border:1px solid var(--glass-border);
+  border-radius:var(--r-sm);padding:.4rem .85rem;
+  font-size:.78rem;color:var(--text-secondary);cursor:pointer;
+  transition:all var(--t-fast);font-family:var(--font-body);
+}
+.ca-btn:hover{background:rgba(226,201,126,.1);border-color:var(--gold-dim);color:var(--gold)}
+.ca-btn i{font-size:.82rem}
+
+/* ── Font Card ── */
+.font-card{}
+.font-grid{display:flex;flex-wrap:wrap;gap:.5rem}
+.font-chip{cursor:pointer}
+.font-chip input{display:none}
+.font-chip span{
+  display:inline-block;padding:.4rem .9rem;
+  background:var(--glass-bg);border:1.5px solid var(--glass-border);
+  border-radius:var(--r-sm);font-size:1rem;color:var(--text-secondary);
+  transition:all var(--t-fast);cursor:pointer;
+}
+.font-chip input:checked + span{
+  border-color:var(--gold);background:rgba(226,201,126,.1);
+  color:var(--gold);box-shadow:0 0 10px rgba(226,201,126,.15);
+}
+.font-chip span:hover{border-color:rgba(226,201,126,.35);color:var(--text-primary)}
+.font-preview{
+  background:rgba(0,0,0,.2);border:1px solid var(--glass-border);
+  border-radius:var(--r-md);padding:.8rem 1.2rem;
+  font-size:1.8rem;color:var(--gold-light);text-align:center;
+  min-height:64px;display:flex;align-items:center;justify-content:center;
+  transition:font-family var(--t-fast);
+}
+
+/* ── Card Theme Picker ── */
+.theme-card{}
+.theme-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.5rem}
+.theme-chip{cursor:pointer}
+.theme-chip input{display:none}
+.theme-swatch{
+  display:flex;align-items:center;justify-content:center;
+  height:48px;border-radius:var(--r-md);border:2px solid transparent;
+  transition:all var(--t-fast);cursor:pointer;
+}
+.theme-chip input:checked + .theme-swatch{
+  border-color:rgba(255,255,255,.5);
+  box-shadow:0 0 14px rgba(226,201,126,.3);transform:scale(1.04);
+}
+.theme-chip .theme-swatch:hover{transform:scale(1.04);border-color:rgba(255,255,255,.25)}
+.theme-label{font-size:.7rem;font-weight:600;color:rgba(255,255,255,.8);text-shadow:0 1px 3px rgba(0,0,0,.5)}
+
+/* ── Profile Photo ── */
+.photo-upload-area{
+  display:flex;align-items:center;gap:1rem;
+  padding:1rem;background:rgba(0,0,0,.15);border-radius:var(--r-md);
+  border:1px dashed var(--glass-border);
+}
+.photo-preview{
+  width:70px;height:70px;border-radius:50%;flex-shrink:0;
+  background:rgba(226,201,126,.08);border:2px dashed rgba(226,201,126,.25);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:.2rem;font-size:.6rem;color:rgba(226,201,126,.4);overflow:hidden;
+  transition:border-color var(--t-fast);
+}
+.photo-preview i{font-size:1.3rem}
+.photo-preview.has-photo{border-style:solid;border-color:var(--gold-dim)}
+.photo-preview img{width:100%;height:100%;object-fit:cover;border-radius:50%}
+.photo-info{flex:1}
+.photo-hint{font-size:.75rem;color:var(--text-muted);margin:.15rem 0 .5rem}
+.photo-choose-btn{font-size:.78rem}
+
+/* ── Form Card ── */
+.form-card{}
+.form-card-title{font-family:var(--font-display);color:var(--gold);font-size:1rem;margin-bottom:1.2rem}
+
+/* ── Submit Button ── */
+.submit-btn{position:relative;overflow:hidden}
+.submit-btn::before{
+  content:'';position:absolute;left:-100%;top:0;
+  width:100%;height:100%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.12),transparent);
+  transition:left .5s;
+}
+.submit-btn.loading::before{left:100%}
+
+/* ── Mobile Fixes ── */
+@media(max-width:768px){
+  .sign-section{padding-top:4.5rem}
+  .canvas-card,.form-card{padding:1rem}
+  .canvas-top-bar{flex-direction:column;align-items:flex-start}
+  .theme-grid{grid-template-columns:repeat(3,1fr)}
+  .font-preview{font-size:1.4rem;min-height:52px}
+  .photo-upload-area{flex-direction:column;text-align:center}
+  .photo-info{text-align:center}
+}
+@media(max-width:400px){
+  .sticker-btn{width:28px;height:28px;font-size:.85rem}
+  .bg-opt{width:26px;height:26px;font-size:.75rem}
+}
+
+/* ── FIXED canvas sizing (matches JS getH()) ── */
+.canvas-wrap { min-height: 210px; }
+
+#bgCanvas {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100% !important;
+  height: 100% !important;
+  display: block;
+  pointer-events: none;
+  z-index: 1;
+}
+#signaturePad {
+  position: relative;
+  z-index: 2;
+  display: block;
+  width: 100% !important;
+  height: 210px;
+  touch-action: none;
+  background: transparent;
+}
+@media (min-width: 992px) {
+  #signaturePad { height: 300px; }
+  .canvas-wrap  { min-height: 300px; }
+}
