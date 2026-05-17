@@ -166,9 +166,13 @@ def sign():
 
 @app.route('/wall')
 def wall():
-    branches = [b[0] for b in
-                db.session.query(Signature.branch)
-                  .filter_by(status='approved').distinct().all()]
+    try:
+        branches = [b[0] for b in
+                    db.session.query(Signature.branch)
+                      .filter_by(status='approved').distinct().all()]
+    except Exception as e:
+        print(f'Wall error: {e}')
+        branches = []
     return render_template('wall.html', branches=branches)
 
 
@@ -227,26 +231,30 @@ def submit_signature():
 # ── API ───────────────────────────────────────────────────────────────────────
 @app.route('/api/signatures')
 def api_signatures():
-    page   = request.args.get('page', 1, type=int)
-    per    = 12
-    search = request.args.get('search', '').strip()
-    branch = request.args.get('branch', '').strip()
-    theme  = request.args.get('theme', '').strip()
+    try:
+        page   = request.args.get('page', 1, type=int)
+        per    = 12
+        search = request.args.get('search', '').strip()
+        branch = request.args.get('branch', '').strip()
+        theme  = request.args.get('theme', '').strip()
 
-    q = Signature.query.filter_by(status='approved')
-    if search: q = q.filter(Signature.name.ilike(f'%{search}%'))
-    if branch: q = q.filter(Signature.branch == branch)
-    if theme:  q = q.filter(Signature.card_theme == theme)
+        q = Signature.query.filter_by(status='approved')
+        if search: q = q.filter(Signature.name.ilike(f'%{search}%'))
+        if branch: q = q.filter(Signature.branch == branch)
+        if theme:  q = q.filter(Signature.card_theme == theme)
 
-    total   = q.count()
-    results = q.order_by(Signature.created_at.desc())\
-                .offset((page-1)*per).limit(per).all()
+        total   = q.count()
+        results = q.order_by(Signature.created_at.desc())\
+                    .offset((page-1)*per).limit(per).all()
 
-    return jsonify({
-        'signatures': [s.to_dict() for s in results],
-        'has_more':   (page * per) < total,
-        'total':      total,
-    })
+        return jsonify({
+            'signatures': [s.to_dict() for s in results],
+            'has_more':   (page * per) < total,
+            'total':      total,
+        })
+    except Exception as e:
+        print(f'API error: {e}')
+        return jsonify({'signatures': [], 'has_more': False, 'total': 0})
 
 
 @app.route('/api/react/<int:sig_id>', methods=['POST'])
@@ -389,16 +397,19 @@ def on_connect():
 # DB INIT
 # ═══════════════════════════════════════════════════════════════════════════════
 
-# ── Auto-create tables on startup (works on Render) ──────────────────────────
+# ── Auto-create tables on Render startup ──────────────────────
 with app.app_context():
-    db.create_all()
-    if not Admin.query.first():
-        db.session.add(Admin(
-            username=ADMIN_CREDS['username'],
-            password=ADMIN_CREDS['password'],
-        ))
-        db.session.commit()
-    print('✅  FarewellInk 2026 — Database ready.')
+    try:
+        db.create_all()
+        if not Admin.query.first():
+            db.session.add(Admin(
+                username=ADMIN_CREDS['username'],
+                password=ADMIN_CREDS['password'],
+            ))
+            db.session.commit()
+        print('✅  Database tables created successfully.')
+    except Exception as e:
+        print(f'⚠️  DB init error: {e}')
 
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=5000, use_reloader=False)
