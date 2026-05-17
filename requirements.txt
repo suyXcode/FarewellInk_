@@ -3,20 +3,11 @@ Flask-SQLAlchemy
 Flask-SocketIO
 Flask-WTF
 Pillow
-<<<<<<< HEAD
 cloudinary
 psycopg2-binary
 qrcode
 python-dotenv
 gunicorn
-
-
-
-=======
-qrcode
 eventlet
-python-dotenv
-psycopg2-binary
-cloudinary
-gunicorn
->>>>>>> f1a4bce (Add files)
+
+
