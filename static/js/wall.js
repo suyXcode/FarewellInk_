@@ -77,14 +77,14 @@
   function buildCard(s) {
     const tc     = THEME_COLORS[s.card_theme] || THEME_COLORS.gold;
     const sigImg = s.signature_image
-      ? `<img src="/static/${s.signature_image}" class="wall-sig-img" alt="signature" loading="lazy"
+      ? `<img src="${s.signature_image}" class="wall-sig-img" alt="signature" loading="lazy"
              style="background:linear-gradient(135deg,${tc.bg.slice(tc.bg.indexOf('#'))})" />`
       : `<div class="wall-sig-img" style="display:flex;align-items:center;justify-content:center;
               font-size:2.8rem;color:rgba(255,255,255,.12);padding:1rem;
               background:linear-gradient(135deg,rgba(0,0,0,.3),rgba(0,0,0,.1))">✍️</div>`;
 
     const avatar = s.profile_photo
-      ? `<img src="/static/${s.profile_photo}" class="wall-avatar-img" alt="${esc(s.name)}"/>`
+      ? `<img src="${s.profile_photo}" class="wall-avatar-img" alt="${esc(s.name)}"/>`
       : `<div class="wall-avatar">${s.name.charAt(0).toUpperCase()}</div>`;
 
     return `
@@ -132,12 +132,12 @@
     const tc = THEME_COLORS[s.card_theme] || THEME_COLORS.gold;
 
     const avatar = s.profile_photo
-      ? `<img src="/static/${s.profile_photo}" class="detail-avatar-img" alt="${esc(s.name)}"/>`
+      ? `<img src="${s.profile_photo}" class="detail-avatar-img" alt="${esc(s.name)}"/>`
       : `<div class="detail-avatar" style="background:${tc.bg}">${s.name.charAt(0).toUpperCase()}</div>`;
 
     const sigImg = s.signature_image
       ? `<div class="detail-sig-wrap mb-3" style="background:rgba(0,0,0,.2)">
-           <img src="/static/${s.signature_image}" class="detail-sig" alt="signature"/>
+           <img src="${s.signature_image}" class="detail-sig" alt="signature"/>
          </div>` : '';
 
     modalBody.innerHTML = `
