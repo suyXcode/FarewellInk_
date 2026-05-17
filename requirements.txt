@@ -8,5 +8,6 @@ psycopg2-binary
 qrcode
 python-dotenv
 gunicorn
+eventlet
 gevent
 gevent-websocket
