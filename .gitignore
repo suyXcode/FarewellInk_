@@ -1,1 +1,30 @@
-myenv
+# Environment
+.env
+*.env
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+venv/
+myenv/
+env/
+
+# Database (local only — production uses PostgreSQL)
+database/
+*.db
+*.sqlite3
+
+# Local uploads (production uses Cloudinary)
+static/uploads/
+
+# IDE
+.vscode/
+.idea/
+*.code-workspace
+
+# OS
+.DS_Store
+Thumbs.db

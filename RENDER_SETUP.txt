@@ -1,0 +1,23 @@
+══════════════════════════════════════════════════════════
+  FarewellInk 2026 — Render Environment Variables
+  Copy-paste these EXACTLY into Render Dashboard
+══════════════════════════════════════════════════════════
+
+Render → Your Web Service → Environment → Add Variable
+
+  SECRET_KEY              = farewell-ink-super-secret-2026
+  DATABASE_URL            = postgresql://farewellink_db_user:uoPAx1UyobLXGZOKz6arYfgqgKbu1vjL@dpg-d84usofaqgkc73auir30-a/farewellink_db
+  CLOUDINARY_CLOUD_NAME   = dndhnx4dn
+  CLOUDINARY_API_KEY      = 351745846696943
+  CLOUDINARY_API_SECRET   = PgrXucauBqVain7h5Uxq4uiOgyQ
+  ADMIN_USERNAME          = admin
+  ADMIN_PASSWORD          = farewell2026
+
+══════════════════════════════════════════════════════════
+  Render Build & Start Settings
+══════════════════════════════════════════════════════════
+
+  Build Command : pip install -r requirements.txt
+  Start Command : gunicorn --worker-class eventlet -w 1 app:app
+
+══════════════════════════════════════════════════════════

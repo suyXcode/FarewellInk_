@@ -5,12 +5,15 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
   <meta name="theme-color" content="#060610"/>
   <meta name="description" content="FarewellInk — Class of 2026 Digital Signature Wall"/>
-<!-- Site Icon / Favicon -->
-<link rel="icon" type="image/x-icon"     href="{{ url_for('static', filename='favicon.ico') }}"/>
-<link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}"/>
-<link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}"/>
-<link rel="apple-touch-icon"             href="{{ url_for('static', filename='favicon-32x32.png') }}"/>
   <title>{% block title %}FarewellInk 🎓{% endblock %}</title>
+
+  <!-- Favicon / Site Icon -->
+  <link rel="icon"                        href="{{ url_for('static', filename='favicon.ico') }}" sizes="any"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='favicon-32x32.png') }}"/>
+  <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='favicon-16x16.png') }}"/>
+  <link rel="apple-touch-icon"            href="{{ url_for('static', filename='apple-touch-icon.png') }}"/>
+  <meta name="msapplication-TileImage"   content="{{ url_for('static', filename='favicon-128x128.png') }}"/>
+  <meta name="msapplication-TileColor"   content="#060610"/>
 
   <!-- Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com"/>

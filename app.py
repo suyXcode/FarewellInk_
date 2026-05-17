@@ -26,9 +26,15 @@ from models.models import db, Signature, Admin
 
 # ── Cloudinary config ─────────────────────────────────────────────────────────
 cloudinary.config(
+<<<<<<< HEAD
     cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
     api_key    = os.environ.get('CLOUDINARY_API_KEY',    ''),
     api_secret = os.environ.get('CLOUDINARY_API_SECRET', ''),
+=======
+    cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME', 'dndhnx4dn'),
+    api_key    = os.environ.get('CLOUDINARY_API_KEY',    '351745846696943'),
+    api_secret = os.environ.get('CLOUDINARY_API_SECRET', 'PgrXucauBqVain7h5Uxq4uiOgyQ'),
+>>>>>>> f1a4bce (Add files)
     secure     = True,
 )
 
