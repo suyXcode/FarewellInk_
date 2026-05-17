@@ -389,18 +389,16 @@ def on_connect():
 # DB INIT
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def init_db():
-    with app.app_context():
-        db.create_all()
-        if not Admin.query.first():
-            db.session.add(Admin(
-                username=ADMIN_CREDS['username'],
-                password=ADMIN_CREDS['password'],
-            ))
-            db.session.commit()
-        print('✅  FarewellInk 2026 — Database ready.')
-
+# ── Auto-create tables on startup (works on Render) ──────────────────────────
+with app.app_context():
+    db.create_all()
+    if not Admin.query.first():
+        db.session.add(Admin(
+            username=ADMIN_CREDS['username'],
+            password=ADMIN_CREDS['password'],
+        ))
+        db.session.commit()
+    print('✅  FarewellInk 2026 — Database ready.')
 
 if __name__ == '__main__':
-    init_db()
     socketio.run(app, debug=True, host='0.0.0.0', port=5000, use_reloader=False)
