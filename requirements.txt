@@ -3,6 +3,11 @@ Flask-SQLAlchemy
 Flask-SocketIO
 Flask-WTF
 Pillow
+cloudinary
+psycopg2-binary
 qrcode
 python-dotenv
 gunicorn
+
+
+
