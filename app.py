@@ -1,20 +1,31 @@
 """
-FarewellInk — Digital Farewell Signature Wall (2026 Batch)
-Persistent storage: PostgreSQL + Cloudinary
+FarewellInk 2026 — Digital Farewell Signature Wall
+PostgreSQL + Cloudinary — fully persistent on Render
 """
-import os, io, base64, random, hashlib, csv
+import os, io, base64, random, csv
 from datetime import datetime
 from pathlib import Path
+
+# ── Load .env for local development ──────────────────────────────────────────
 from dotenv import load_dotenv
+load_dotenv()
 
-load_dotenv()  # loads .env file for local dev
-
+# ── Cloudinary ────────────────────────────────────────────────────────────────
 import cloudinary
 import cloudinary.uploader
 
+cloudinary.config(
+    cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME', 'dndhnx4dn'),
+    api_key    = os.environ.get('CLOUDINARY_API_KEY',    '351745846696943'),
+    api_secret = os.environ.get('CLOUDINARY_API_SECRET', 'PgrXucauBqVain7h5Uxq4uiOgyQ'),
+    secure     = True,
+)
+
+# ── PIL & QR ──────────────────────────────────────────────────────────────────
 from PIL import Image
 import qrcode
 
+# ── Flask ─────────────────────────────────────────────────────────────────────
 from flask import (Flask, render_template, request, jsonify,
                    redirect, url_for, session, send_file, flash, abort)
 from flask_socketio import SocketIO, emit
@@ -24,34 +35,23 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 from models.models import db, Signature, Admin
 
-# ── Cloudinary config ─────────────────────────────────────────────────────────
-cloudinary.config(
-    cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME', 'dndhnx4dn'),
-    api_key    = os.environ.get('CLOUDINARY_API_KEY',    '351745846696943'),
-    api_secret = os.environ.get('CLOUDINARY_API_SECRET', 'PgrXucauBqVain7h5Uxq4uiOgyQ'),
-    secure     = True,
-)
-
-# ── App ───────────────────────────────────────────────────────────────────────
+# ── App setup ─────────────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent
 
 app = Flask(__name__)
 
-# ── Database URL ──────────────────────────────────────────────────────────────
-# Render sets DATABASE_URL with postgres:// but SQLAlchemy needs postgresql://
+# Fix Render's postgres:// → postgresql://
 DATABASE_URL = os.environ.get('DATABASE_URL', '')
 if DATABASE_URL.startswith('postgres://'):
     DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
-
-# Fallback to SQLite for local development without PostgreSQL
 if not DATABASE_URL:
-    DB_PATH    = BASE_DIR / 'database' / 'farewellink.db'
+    DB_PATH = BASE_DIR / 'database' / 'farewellink.db'
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     DATABASE_URL = f'sqlite:///{DB_PATH}'
-    print('⚠️  No DATABASE_URL found — using SQLite (local dev only)')
+    print('⚠️  Using SQLite — local dev only')
 
 app.config.update(
-    SECRET_KEY                     = os.environ.get('SECRET_KEY', 'farewell-ink-2026-local'),
+    SECRET_KEY                     = os.environ.get('SECRET_KEY', 'fi-secret-2026'),
     SQLALCHEMY_DATABASE_URI        = DATABASE_URL,
     SQLALCHEMY_TRACK_MODIFICATIONS = False,
     WTF_CSRF_ENABLED               = True,
@@ -62,12 +62,16 @@ db.init_app(app)
 csrf     = CSRFProtect(app)
 socketio = SocketIO(app, cors_allowed_origins='*', async_mode='gevent')
 
-# ── Quotes ────────────────────────────────────────────────────────────────────
+ADMIN_CREDS = {
+    'username': os.environ.get('ADMIN_USERNAME', 'admin'),
+    'password': os.environ.get('ADMIN_PASSWORD', 'farewell2026'),
+}
+
 QUOTES = [
     "Not goodbye — see you on the other side of greatness. 🌟",
     "The tassel was worth the hassle. 🎓",
     "Go confidently in the direction of your dreams.",
-    "This is not the end. It's the end of the beginning.",
+    "This is not the end — it's the end of the beginning.",
     "Don't cry because it's over. Smile because it happened.",
     "May your cap fly as high as your dreams. 🎓",
     "The future belongs to those who believe in their dreams.",
@@ -76,78 +80,67 @@ QUOTES = [
     "Class of 2026 — you made history. Now go make the future.",
 ]
 
-# Admin credentials from environment
-ADMIN_CREDS = {
-    'username': os.environ.get('ADMIN_USERNAME', 'admin'),
-    'password': os.environ.get('ADMIN_PASSWORD', 'farewell2026'),
-}
-
 visitor_count = 0
 
+# ── Auto-create tables on startup (critical for Render) ───────────────────────
+with app.app_context():
+    try:
+        db.create_all()
+        if not Admin.query.first():
+            db.session.add(Admin(
+                username=ADMIN_CREDS['username'],
+                password=ADMIN_CREDS['password'],
+            ))
+            db.session.commit()
+        print('✅  Database tables ready.')
+    except Exception as e:
+        print(f'⚠️  DB init error: {e}')
+
 # ═══════════════════════════════════════════════════════════════════════════════
-# IMAGE UPLOAD HELPER — saves to Cloudinary (production) or local (dev)
+# IMAGE UPLOAD — Cloudinary with local fallback
 # ═══════════════════════════════════════════════════════════════════════════════
 
 def save_image(data_url, folder_name):
-    """
-    Upload base64 image to Cloudinary.
-    Returns the secure URL (string) or None on failure.
-    Falls back to local disk if Cloudinary is not configured.
-    """
+    """Upload to Cloudinary → return https:// URL. Local fallback if needed."""
     if not data_url or not data_url.startswith('data:image/'):
         return None
-
     try:
         img_bytes = base64.b64decode(data_url.split(',', 1)[1])
-    except Exception:
+    except Exception as e:
+        print(f'❌ base64 decode error: {e}')
         return None
 
-    # ── Cloudinary upload ──────────────────────────────────────────────────────
-    cloud_name = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
-    if cloud_name:
-        try:
-            result = cloudinary.uploader.upload(
-                io.BytesIO(img_bytes),
-                folder        = f'farewellink/{folder_name}',
-                resource_type = 'image',
-                format        = 'png',
-            )
-            return result.get('secure_url')
-        except Exception as e:
-            print(f'Cloudinary upload error: {e}')
-            return None
-
-    # ── Local fallback (SQLite / local dev) ───────────────────────────────────
+    # ── Try Cloudinary first ───────────────────────────────────────────────────
     try:
-        local_folder = BASE_DIR / 'static' / 'uploads' / folder_name
-        local_folder.mkdir(parents=True, exist_ok=True)
+        result = cloudinary.uploader.upload(
+            io.BytesIO(img_bytes),
+            folder        = f'farewellink/{folder_name}',
+            resource_type = 'image',
+            format        = 'png',
+        )
+        url = result.get('secure_url', '')
+        if url:
+            print(f'✅ Cloudinary upload OK: {url}')
+            return url
+    except Exception as e:
+        print(f'❌ Cloudinary error: {e}')
+
+    # ── Local fallback (dev only) ──────────────────────────────────────────────
+    try:
+        local_dir = BASE_DIR / 'static' / 'uploads' / folder_name
+        local_dir.mkdir(parents=True, exist_ok=True)
         ts       = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
         filename = f'{folder_name[:3]}_{ts}.png'
-        img      = Image.open(io.BytesIO(img_bytes)).convert('RGBA')
-        img.save(local_folder / filename, 'PNG')
-        return f'uploads/{folder_name}/{filename}'   # relative path
+        Image.open(io.BytesIO(img_bytes)).convert('RGBA').save(local_dir / filename, 'PNG')
+        path = f'uploads/{folder_name}/{filename}'
+        print(f'✅ Local save: {path}')
+        return path
     except Exception as e:
-        print(f'Local save error: {e}')
+        print(f'❌ Local save error: {e}')
         return None
-
-
-def image_src(path_or_url):
-    """
-    Return the correct src for <img> tags.
-    Cloudinary URLs are absolute; local paths need /static/ prefix.
-    """
-    if not path_or_url:
-        return None
-    if path_or_url.startswith('http'):
-        return path_or_url
-    return f'/static/{path_or_url}'
-
-
-# Make helper available in Jinja2 templates
-app.jinja_env.globals['image_src'] = image_src
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ROUTES — PUBLIC
+# PUBLIC ROUTES
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route('/')
@@ -155,13 +148,16 @@ def index():
     global visitor_count
     visitor_count += 1
     socketio.emit('visitor_update', {'count': visitor_count})
-    total = Signature.query.filter_by(status='approved').count()
+    try:
+        total = Signature.query.filter_by(status='approved').count()
+    except Exception:
+        total = 0
     return render_template('index.html', total=total, quote=random.choice(QUOTES))
 
 
 @app.route('/sign')
 def sign():
-    return render_template('sign.html', quote=random.choice(QUOTES))
+    return render_template('sign.html')
 
 
 @app.route('/wall')
@@ -171,7 +167,7 @@ def wall():
                     db.session.query(Signature.branch)
                       .filter_by(status='approved').distinct().all()]
     except Exception as e:
-        print(f'Wall error: {e}')
+        print(f'Wall branches error: {e}')
         branches = []
     return render_template('wall.html', branches=branches)
 
@@ -182,7 +178,6 @@ def view_signature(sig_id):
     return render_template('signature_detail.html', sig=sig)
 
 
-# ── Submit ─────────────────────────────────────────────────────────────────────
 @app.route('/api/submit', methods=['POST'])
 @csrf.exempt
 def submit_signature():
@@ -195,32 +190,29 @@ def submit_signature():
         if not val or (isinstance(val, str) and not val.strip()):
             return jsonify({'success': False, 'error': f'{field} is required'}), 400
 
-    name            = data['name'][:120].strip()
-    nickname        = data.get('nickname', '')[:80].strip()
-    branch          = data['branch'][:100].strip()
-    message         = data['message'][:2000].strip()
-    favorite_memory = data.get('favorite_memory', '')[:2000].strip()
-    font            = data.get('font', 'Pacifico')[:60].strip()
-    pen_color       = data.get('pen_color', '#e2c97e')[:20].strip()
-    card_theme      = data.get('card_theme', 'gold')[:40].strip()
-
     try:
         grad_year = int(data['graduation_year'])
         assert 2000 <= grad_year <= 2099
     except Exception:
-        return jsonify({'success': False, 'error': 'Invalid graduation year'}), 400
+        return jsonify({'success': False, 'error': 'Invalid year'}), 400
 
-    # Upload images to Cloudinary (or local fallback)
+    # Upload images
     image_url = save_image(data.get('signature_data', ''), 'signatures')
     photo_url = save_image(data.get('profile_photo', ''),  'photos')
 
     sig = Signature(
-        name=name, nickname=nickname, branch=branch,
-        graduation_year=grad_year, message=message,
-        favorite_memory=favorite_memory, font=font,
-        pen_color=pen_color, card_theme=card_theme,
-        signature_image=image_url, profile_photo=photo_url,
-        status='approved',
+        name            = data['name'][:120].strip(),
+        nickname        = data.get('nickname', '')[:80].strip(),
+        branch          = data['branch'][:100].strip(),
+        graduation_year = grad_year,
+        message         = data['message'][:2000].strip(),
+        favorite_memory = data.get('favorite_memory', '')[:2000].strip(),
+        font            = data.get('font', 'Pacifico')[:60].strip(),
+        pen_color       = data.get('pen_color', '#e2c97e')[:20].strip(),
+        card_theme      = data.get('card_theme', 'gold')[:40].strip(),
+        signature_image = image_url,
+        profile_photo   = photo_url,
+        status          = 'approved',
     )
     db.session.add(sig)
     db.session.commit()
@@ -228,7 +220,6 @@ def submit_signature():
     return jsonify({'success': True, 'id': sig.id, 'quote': random.choice(QUOTES)})
 
 
-# ── API ───────────────────────────────────────────────────────────────────────
 @app.route('/api/signatures')
 def api_signatures():
     try:
@@ -236,16 +227,16 @@ def api_signatures():
         per    = 12
         search = request.args.get('search', '').strip()
         branch = request.args.get('branch', '').strip()
-        theme  = request.args.get('theme', '').strip()
+        theme  = request.args.get('theme',  '').strip()
 
         q = Signature.query.filter_by(status='approved')
         if search: q = q.filter(Signature.name.ilike(f'%{search}%'))
-        if branch: q = q.filter(Signature.branch == branch)
+        if branch: q = q.filter(Signature.branch   == branch)
         if theme:  q = q.filter(Signature.card_theme == theme)
 
         total   = q.count()
         results = q.order_by(Signature.created_at.desc())\
-                    .offset((page-1)*per).limit(per).all()
+                   .offset((page - 1) * per).limit(per).all()
 
         return jsonify({
             'signatures': [s.to_dict() for s in results],
@@ -272,13 +263,11 @@ def react(sig_id):
 @app.route('/download/png/<int:sig_id>')
 def download_png(sig_id):
     sig = Signature.query.filter_by(id=sig_id, status='approved').first_or_404()
-    if not sig.signature_image: abort(404)
-
-    # If Cloudinary URL — redirect to it directly
-    if sig.signature_image.startswith('http'):
-        return redirect(sig.signature_image)
-
-    # Local file
+    if not sig.signature_image:
+        abort(404)
+    url = Signature.make_url(sig.signature_image)
+    if url.startswith('http'):
+        return redirect(url)
     path = BASE_DIR / 'static' / sig.signature_image
     return send_file(path, as_attachment=True,
                      download_name=f'{sig.name.replace(" ","_")}_signature.png')
@@ -294,7 +283,7 @@ def qr_code():
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ADMIN
+# ADMIN ROUTES
 # ═══════════════════════════════════════════════════════════════════════════════
 
 @app.route('/admin/login', methods=['GET', 'POST'])
@@ -336,8 +325,9 @@ def admin_dashboard():
     branches = db.session.query(Signature.branch, db.func.count(Signature.id))\
                  .group_by(Signature.branch).all()
     return render_template('admin/dashboard.html',
-                           total=total, approved=approved, pending=pending,
-                           rejected=rejected, recent=recent, branches=branches,
+                           total=total, approved=approved,
+                           pending=pending, rejected=rejected,
+                           recent=recent, branches=branches,
                            visitor_count=visitor_count)
 
 
@@ -394,22 +384,5 @@ def on_connect():
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# DB INIT
-# ═══════════════════════════════════════════════════════════════════════════════
-
-# ── Auto-create tables on Render startup ──────────────────────
-with app.app_context():
-    try:
-        db.create_all()
-        if not Admin.query.first():
-            db.session.add(Admin(
-                username=ADMIN_CREDS['username'],
-                password=ADMIN_CREDS['password'],
-            ))
-            db.session.commit()
-        print('✅  Database tables created successfully.')
-    except Exception as e:
-        print(f'⚠️  DB init error: {e}')
-
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=5000, use_reloader=False)

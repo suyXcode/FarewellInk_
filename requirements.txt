@@ -3,11 +3,12 @@ Flask-SQLAlchemy
 Flask-SocketIO
 Flask-WTF
 Pillow
-cloudinary
-psycopg2-binary
+
 qrcode
-python-dotenv
-gunicorn
-eventlet
 gevent
 gevent-websocket
+python-dotenv
+psycopg2-binary
+cloudinary
+gunicorn
+

@@ -1,4 +1,3 @@
-"""FarewellInk — Database Models (PostgreSQL + Cloudinary ready)"""
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
@@ -6,7 +5,7 @@ db = SQLAlchemy()
 
 class Signature(db.Model):
     __tablename__ = 'signatures'
-    id              = db.Column(db.Integer,     primary_key=True)
+    id              = db.Column(db.Integer,  primary_key=True)
     name            = db.Column(db.String(120), nullable=False)
     nickname        = db.Column(db.String(80),  nullable=True)
     branch          = db.Column(db.String(100), nullable=False)
@@ -15,7 +14,6 @@ class Signature(db.Model):
     favorite_memory = db.Column(db.Text,        nullable=True)
     font            = db.Column(db.String(60),  default='Pacifico')
     pen_color       = db.Column(db.String(20),  default='#e2c97e')
-    # Stores Cloudinary URL (https://...) or local path
     signature_image = db.Column(db.Text,        nullable=True)
     profile_photo   = db.Column(db.Text,        nullable=True)
     card_theme      = db.Column(db.String(40),  default='gold')
@@ -25,24 +23,31 @@ class Signature(db.Model):
     caps            = db.Column(db.Integer,     default=0)
     created_at      = db.Column(db.DateTime,    default=datetime.utcnow)
 
+    @staticmethod
+    def make_url(path):
+        """Convert any stored path/URL into a usable src URL."""
+        if not path:
+            return ''
+        if path.startswith('http://') or path.startswith('https://'):
+            return path          # Cloudinary full URL — use as-is
+        if path.startswith('/'):
+            return path          # Already absolute
+        return '/static/' + path # Local relative path
+
     def to_dict(self):
-        from flask import current_app
-        def src(p):
-            if not p: return None
-            if p.startswith('http'): return p
-            return f'/static/{p}'
         return {
             'id':              self.id,
             'name':            self.name,
-            'nickname':        self.nickname,
+            'nickname':        self.nickname or '',
             'branch':          self.branch,
             'graduation_year': self.graduation_year,
             'message':         self.message,
-            'favorite_memory': self.favorite_memory,
+            'favorite_memory': self.favorite_memory or '',
             'font':            self.font,
             'pen_color':       self.pen_color,
-            'signature_image': src(self.signature_image),
-            'profile_photo':   src(self.profile_photo),
+            # ✅ Always return ready-to-use URL
+            'signature_image': self.make_url(self.signature_image),
+            'profile_photo':   self.make_url(self.profile_photo),
             'card_theme':      self.card_theme,
             'status':          self.status,
             'likes':           self.likes,
