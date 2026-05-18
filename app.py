@@ -1,16 +1,19 @@
-"""
-FarewellInk 2026 — Digital Farewell Signature Wall
-PostgreSQL + Cloudinary — fully persistent on Render
-"""
-import os, io, base64, random, csv
+# ══════════════════════════════════════════════════════════════════
+# CRITICAL: gevent monkey patch MUST be first line before ALL imports
+# This fixes Cloudinary SSL upload failures on Render
+# ══════════════════════════════════════════════════════════════════
+from gevent import monkey
+monkey.patch_all()
+
+# ── Standard imports ──────────────────────────────────────────────
+import os, io, base64, random, csv, json
 from datetime import datetime
 from pathlib import Path
 
-# ── Load .env for local development ──────────────────────────────────────────
 from dotenv import load_dotenv
 load_dotenv()
 
-# ── Cloudinary ────────────────────────────────────────────────────────────────
+# ── Cloudinary (imported AFTER monkey patch) ──────────────────────
 import cloudinary
 import cloudinary.uploader
 
@@ -21,11 +24,9 @@ cloudinary.config(
     secure     = True,
 )
 
-# ── PIL & QR ──────────────────────────────────────────────────────────────────
 from PIL import Image
 import qrcode
 
-# ── Flask ─────────────────────────────────────────────────────────────────────
 from flask import (Flask, render_template, request, jsonify,
                    redirect, url_for, session, send_file, flash, abort)
 from flask_socketio import SocketIO, emit
@@ -35,12 +36,10 @@ import sys
 sys.path.insert(0, os.path.dirname(__file__))
 from models.models import db, Signature, Admin
 
-# ── App setup ─────────────────────────────────────────────────────────────────
+# ── App ───────────────────────────────────────────────────────────
 BASE_DIR = Path(__file__).resolve().parent
+app      = Flask(__name__)
 
-app = Flask(__name__)
-
-# Fix Render's postgres:// → postgresql://
 DATABASE_URL = os.environ.get('DATABASE_URL', '')
 if DATABASE_URL.startswith('postgres://'):
     DATABASE_URL = DATABASE_URL.replace('postgres://', 'postgresql://', 1)
@@ -48,7 +47,7 @@ if not DATABASE_URL:
     DB_PATH = BASE_DIR / 'database' / 'farewellink.db'
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     DATABASE_URL = f'sqlite:///{DB_PATH}'
-    print('⚠️  Using SQLite — local dev only')
+    print('⚠️  Using SQLite (local dev)')
 
 app.config.update(
     SECRET_KEY                     = os.environ.get('SECRET_KEY', 'fi-secret-2026'),
@@ -82,7 +81,7 @@ QUOTES = [
 
 visitor_count = 0
 
-# ── Auto-create tables on startup (critical for Render) ───────────────────────
+# ── Auto-create tables ────────────────────────────────────────────
 with app.app_context():
     try:
         db.create_all()
@@ -92,25 +91,35 @@ with app.app_context():
                 password=ADMIN_CREDS['password'],
             ))
             db.session.commit()
-        print('✅  Database tables ready.')
+        print('✅  Database ready.')
     except Exception as e:
         print(f'⚠️  DB init error: {e}')
 
-# ═══════════════════════════════════════════════════════════════════════════════
-# IMAGE UPLOAD — Cloudinary with local fallback
-# ═══════════════════════════════════════════════════════════════════════════════
+# ═════════════════════════════════════════════════════════════════════
+# IMAGE HELPERS
+# ═════════════════════════════════════════════════════════════════════
 
 def save_image(data_url, folder_name):
-    """Upload to Cloudinary → return https:// URL. Local fallback if needed."""
+    """
+    Upload base64 image to Cloudinary.
+    Returns Cloudinary https:// URL or None.
+    """
     if not data_url or not data_url.startswith('data:image/'):
         return None
+
     try:
         img_bytes = base64.b64decode(data_url.split(',', 1)[1])
     except Exception as e:
-        print(f'❌ base64 decode error: {e}')
+        print(f'❌ base64 decode failed: {e}')
         return None
 
-    # ── Try Cloudinary first ───────────────────────────────────────────────────
+    # ── Test Cloudinary config is valid ──────────────────────────
+    cloud = os.environ.get('CLOUDINARY_CLOUD_NAME', 'dndhnx4dn')
+    key   = os.environ.get('CLOUDINARY_API_KEY',    '351745846696943')
+    secret= os.environ.get('CLOUDINARY_API_SECRET', 'PgrXucauBqVain7h5Uxq4uiOgyQ')
+    print(f'🔑 Cloudinary config — cloud:{cloud} key:{key[:6]}... secret:{secret[:6]}...')
+
+    # ── Upload to Cloudinary ──────────────────────────────────────
     try:
         result = cloudinary.uploader.upload(
             io.BytesIO(img_bytes),
@@ -120,28 +129,44 @@ def save_image(data_url, folder_name):
         )
         url = result.get('secure_url', '')
         if url:
-            print(f'✅ Cloudinary upload OK: {url}')
+            print(f'✅ Cloudinary upload success: {url[:60]}...')
             return url
+        else:
+            print(f'❌ Cloudinary returned no URL. Result: {result}')
     except Exception as e:
-        print(f'❌ Cloudinary error: {e}')
+        print(f'❌ Cloudinary upload failed: {type(e).__name__}: {e}')
 
-    # ── Local fallback (dev only) ──────────────────────────────────────────────
+    # ── Local fallback ────────────────────────────────────────────
     try:
         local_dir = BASE_DIR / 'static' / 'uploads' / folder_name
         local_dir.mkdir(parents=True, exist_ok=True)
         ts       = datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
         filename = f'{folder_name[:3]}_{ts}.png'
-        Image.open(io.BytesIO(img_bytes)).convert('RGBA').save(local_dir / filename, 'PNG')
+        Image.open(io.BytesIO(img_bytes)).convert('RGBA').save(local_dir / filename)
         path = f'uploads/{folder_name}/{filename}'
-        print(f'✅ Local save: {path}')
+        print(f'✅ Local fallback save: {path}')
         return path
     except Exception as e:
-        print(f'❌ Local save error: {e}')
+        print(f'❌ Local save also failed: {e}')
         return None
 
-# ═══════════════════════════════════════════════════════════════════════════════
+
+def delete_cloudinary_image(url):
+    """Delete image from Cloudinary by URL."""
+    if not url or not url.startswith('http'):
+        return
+    try:
+        parts = url.split('/upload/')
+        if len(parts) == 2:
+            public_id = parts[1].rsplit('.', 1)[0]
+            result = cloudinary.uploader.destroy(public_id)
+            print(f'✅ Cloudinary deleted: {public_id} → {result}')
+    except Exception as e:
+        print(f'⚠️  Cloudinary delete error: {e}')
+
+# ═════════════════════════════════════════════════════════════════════
 # PUBLIC ROUTES
-# ═══════════════════════════════════════════════════════════════════════════════
+# ═════════════════════════════════════════════════════════════════════
 
 @app.route('/')
 def index():
@@ -167,7 +192,7 @@ def wall():
                     db.session.query(Signature.branch)
                       .filter_by(status='approved').distinct().all()]
     except Exception as e:
-        print(f'Wall branches error: {e}')
+        print(f'Wall error: {e}')
         branches = []
     return render_template('wall.html', branches=branches)
 
@@ -196,9 +221,11 @@ def submit_signature():
     except Exception:
         return jsonify({'success': False, 'error': 'Invalid year'}), 400
 
-    # Upload images
+    print(f'📝 New submission from: {data.get("name")}')
     image_url = save_image(data.get('signature_data', ''), 'signatures')
-    photo_url = save_image(data.get('profile_photo', ''),  'photos')
+    photo_url = save_image(data.get('profile_photo',  ''), 'photos')
+    print(f'🖼️  signature_image = {image_url}')
+    print(f'📷  profile_photo   = {photo_url}')
 
     sig = Signature(
         name            = data['name'][:120].strip(),
@@ -217,6 +244,7 @@ def submit_signature():
     db.session.add(sig)
     db.session.commit()
     socketio.emit('new_signature', sig.to_dict())
+    print(f'✅ Saved signature id={sig.id}')
     return jsonify({'success': True, 'id': sig.id, 'quote': random.choice(QUOTES)})
 
 
@@ -231,7 +259,7 @@ def api_signatures():
 
         q = Signature.query.filter_by(status='approved')
         if search: q = q.filter(Signature.name.ilike(f'%{search}%'))
-        if branch: q = q.filter(Signature.branch   == branch)
+        if branch: q = q.filter(Signature.branch    == branch)
         if theme:  q = q.filter(Signature.card_theme == theme)
 
         total   = q.count()
@@ -262,15 +290,21 @@ def react(sig_id):
 
 @app.route('/download/png/<int:sig_id>')
 def download_png(sig_id):
-    sig = Signature.query.filter_by(id=sig_id, status='approved').first_or_404()
+    """Download signature — handles Cloudinary URLs and local files."""
+    sig = Signature.query.get_or_404(sig_id)
     if not sig.signature_image:
         abort(404)
-    url = Signature.make_url(sig.signature_image)
-    if url.startswith('http'):
-        return redirect(url)
-    path = BASE_DIR / 'static' / sig.signature_image
-    return send_file(path, as_attachment=True,
-                     download_name=f'{sig.name.replace(" ","_")}_signature.png')
+    # Cloudinary URL → redirect directly to it
+    if sig.signature_image.startswith('http'):
+        return redirect(sig.signature_image)
+    # Local file
+    try:
+        path = BASE_DIR / 'static' / sig.signature_image
+        return send_file(path, as_attachment=True,
+                         download_name=f'{sig.name.replace(" ","_")}_signature.png')
+    except Exception as e:
+        print(f'Download error: {e}')
+        abort(404)
 
 
 @app.route('/qr')
@@ -282,9 +316,26 @@ def qr_code():
     return send_file(buf, mimetype='image/png')
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# ── Test Cloudinary connection ────────────────────────────────────
+@app.route('/admin/test-cloudinary')
+@admin_required if False else lambda f: f   # temp: no auth for quick test
+def test_cloudinary():
+    """Quick test to verify Cloudinary is working."""
+    try:
+        import cloudinary.api
+        result = cloudinary.api.ping()
+        return jsonify({
+            'success': True,
+            'cloudinary_ping': result,
+            'cloud_name': os.environ.get('CLOUDINARY_CLOUD_NAME', 'dndhnx4dn'),
+        })
+    except Exception as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+
+
+# ═════════════════════════════════════════════════════════════════════
 # ADMIN ROUTES
-# ═══════════════════════════════════════════════════════════════════════════════
+# ═════════════════════════════════════════════════════════════════════
 
 @app.route('/admin/login', methods=['GET', 'POST'])
 @csrf.exempt
@@ -321,7 +372,7 @@ def admin_dashboard():
     approved = Signature.query.filter_by(status='approved').count()
     pending  = Signature.query.filter_by(status='pending').count()
     rejected = Signature.query.filter_by(status='rejected').count()
-    recent   = Signature.query.order_by(Signature.created_at.desc()).limit(30).all()
+    recent   = Signature.query.order_by(Signature.created_at.desc()).limit(50).all()
     branches = db.session.query(Signature.branch, db.func.count(Signature.id))\
                  .group_by(Signature.branch).all()
     return render_template('admin/dashboard.html',
@@ -337,6 +388,24 @@ def admin_dashboard():
 def admin_delete(sig_id):
     sig = Signature.query.get_or_404(sig_id)
     sig.status = 'rejected'
+    db.session.commit()
+    socketio.emit('signature_removed', {'id': sig_id})
+    return jsonify({'success': True})
+
+
+@app.route('/admin/permanent-delete/<int:sig_id>', methods=['POST'])
+@csrf.exempt
+@admin_required
+def admin_permanent_delete(sig_id):
+    sig = Signature.query.get_or_404(sig_id)
+    if sig.status != 'rejected':
+        return jsonify({
+            'success': False,
+            'error': 'Hide the signature first before permanently deleting.'
+        }), 400
+    delete_cloudinary_image(sig.signature_image)
+    delete_cloudinary_image(sig.profile_photo)
+    db.session.delete(sig)
     db.session.commit()
     socketio.emit('signature_removed', {'id': sig_id})
     return jsonify({'success': True})
@@ -374,15 +443,45 @@ def admin_export():
                      as_attachment=True, download_name='farewellink_2026.csv')
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+@app.route('/admin/backup-all')
+@admin_required
+def admin_backup_all():
+    """Full JSON backup of ALL signatures including image URLs."""
+    sigs   = Signature.query.order_by(Signature.created_at.asc()).all()
+    backup = [{
+        'id':              s.id,
+        'name':            s.name,
+        'nickname':        s.nickname,
+        'branch':          s.branch,
+        'graduation_year': s.graduation_year,
+        'message':         s.message,
+        'favorite_memory': s.favorite_memory,
+        'font':            s.font,
+        'pen_color':       s.pen_color,
+        'card_theme':      s.card_theme,
+        'signature_image': s.signature_image,
+        'profile_photo':   s.profile_photo,
+        'status':          s.status,
+        'likes':           s.likes,
+        'fires':           s.fires,
+        'caps':            s.caps,
+        'created_at':      s.created_at.strftime('%Y-%m-%d %H:%M:%S'),
+    } for s in sigs]
+    buf = io.BytesIO(json.dumps(backup, indent=2, ensure_ascii=False).encode())
+    buf.seek(0)
+    return send_file(buf, mimetype='application/json', as_attachment=True,
+                     download_name=f'farewellink_backup_{datetime.utcnow().strftime("%Y%m%d_%H%M")}.json')
+
+
+# ═════════════════════════════════════════════════════════════════════
 # SOCKETIO
-# ═══════════════════════════════════════════════════════════════════════════════
+# ═════════════════════════════════════════════════════════════════════
 
 @socketio.on('connect')
 def on_connect():
     emit('visitor_update', {'count': visitor_count})
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# ═════════════════════════════════════════════════════════════════════
 if __name__ == '__main__':
     socketio.run(app, debug=True, host='0.0.0.0', port=5000, use_reloader=False)

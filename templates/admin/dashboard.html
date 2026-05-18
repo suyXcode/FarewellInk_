@@ -14,7 +14,7 @@
 
 <div class="admin-layout">
 
-  <!-- Sidebar -->
+  <!-- ── SIDEBAR ── -->
   <aside class="admin-sidebar" id="adminSidebar">
     <div class="sidebar-brand">
       <span>🎓</span>
@@ -38,7 +38,7 @@
     </div>
   </aside>
 
-  <!-- Main -->
+  <!-- ── MAIN ── -->
   <main class="admin-main">
 
     <!-- Top Bar -->
@@ -67,7 +67,9 @@
         (visitor_count, 'Visitors', 'fa-users',       '#64b5f6'),
       ] %}
       <div class="stat-box">
-        <div class="stat-icon" style="color:{{ color }}"><i class="fas {{ icon }}"></i></div>
+        <div class="stat-icon" style="color:{{ color }}">
+          <i class="fas {{ icon }}"></i>
+        </div>
         <div class="stat-val" style="color:{{ color }}">{{ val }}</div>
         <div class="stat-lbl">{{ lbl }}</div>
       </div>
@@ -75,12 +77,12 @@
     </div>
 
     <!-- Branches -->
-    <div class="admin-card mb-4">
-      <div class="admin-card-title">
-        <i class="fas fa-sitemap me-2"></i>Signatures by Branch
+    <div class="admin-card mb-3">
+      <div class="admin-card-title mb-2">
+        <i class="fas fa-sitemap me-2"></i>By Branch
       </div>
       <div class="branch-chips">
-        {% for branch,count in branches %}
+        {% for branch, count in branches %}
         <span class="branch-chip">{{ branch }} <strong>{{ count }}</strong></span>
         {% else %}
         <span class="text-muted small">No data yet</span>
@@ -88,15 +90,50 @@
       </div>
     </div>
 
+    <!-- Legend -->
+    <div class="admin-card mb-3">
+      <div class="admin-card-title mb-2">
+        <i class="fas fa-info-circle me-2"></i>Action Guide
+      </div>
+      <div class="d-flex flex-wrap gap-3">
+        <div class="legend-item">
+          <span class="act-btn view-btn" style="display:inline-flex"><i class="fas fa-eye"></i></span>
+          <span>View signature</span>
+        </div>
+        <div class="legend-item">
+          <span class="act-btn approve-btn" style="display:inline-flex"><i class="fas fa-check"></i></span>
+          <span>Approve — show on wall</span>
+        </div>
+        <div class="legend-item">
+          <span class="act-btn pending-btn" style="display:inline-flex"><i class="fas fa-clock"></i></span>
+          <span>Set pending</span>
+        </div>
+        <div class="legend-item">
+          <span class="act-btn delete-btn" style="display:inline-flex"><i class="fas fa-eye-slash"></i></span>
+          <span>Hide from wall</span>
+        </div>
+        <div class="legend-item">
+          <span class="act-btn perm-delete-btn" style="display:inline-flex"><i class="fas fa-trash-alt"></i></span>
+          <span>Permanently delete (only hidden)</span>
+        </div>
+      </div>
+    </div>
+
     <!-- Search -->
     <div class="admin-card mb-3">
-      <div class="d-flex align-items-center gap-3">
-        <div class="flex-grow-1" style="position:relative">
+      <div class="d-flex align-items-center gap-3 flex-wrap">
+        <div class="flex-grow-1" style="position:relative;min-width:200px">
           <i class="fas fa-search" style="position:absolute;left:.9rem;top:50%;transform:translateY(-50%);color:var(--text-muted)"></i>
           <input type="text" id="adminSearch" class="form-control fi-input ps-5"
-                 placeholder="Search signatures by name…"/>
+                 placeholder="Search by name…"/>
         </div>
-        <span class="text-muted small">{{ recent|length }} shown</span>
+        <select id="statusFilter" class="form-select fi-input" style="max-width:160px">
+          <option value="">All Status</option>
+          <option value="approved">Approved</option>
+          <option value="pending">Pending</option>
+          <option value="rejected">Hidden</option>
+        </select>
+        <span class="text-muted small" id="rowCount">{{ recent|length }} shown</span>
       </div>
     </div>
 
@@ -122,62 +159,107 @@
           </thead>
           <tbody>
             {% for sig in recent %}
-            <tr id="row-{{ sig.id }}" class="sig-row" data-name="{{ sig.name|lower }}">
-              <td class="text-muted">{{ sig.id }}</td>
+            <tr id="row-{{ sig.id }}"
+                class="sig-row"
+                data-name="{{ sig.name|lower }}"
+                data-status="{{ sig.status }}">
+              <td class="text-muted small">{{ sig.id }}</td>
+
               <td>
                 {% if sig.profile_photo %}
-                  <img src="{{ url_for('static', filename=sig.profile_photo) }}"
-                       class="admin-avatar" alt="photo"/>
+                  <img src="{{ sig.profile_photo }}"
+                       class="admin-avatar" alt="photo"
+                       onerror="this.outerHTML='<div class=admin-avatar-placeholder>{{ sig.name[0].upper() }}</div>'"/>
                 {% else %}
                   <div class="admin-avatar-placeholder">{{ sig.name[0].upper() }}</div>
                 {% endif %}
               </td>
+
               <td>
                 {% if sig.signature_image %}
-                  <img src="{{ url_for('static', filename=sig.signature_image) }}"
-                       class="sig-thumb" alt="sig"/>
+                  <img src="{{ sig.signature_image }}"
+                       class="sig-thumb" alt="signature"
+                       onerror="this.style.display='none'"/>
                 {% else %}
                   <span class="text-muted">—</span>
                 {% endif %}
               </td>
+
               <td>
                 <div style="font-family:'{{ sig.font }}',cursive;font-size:.95rem;color:var(--gold)">
                   {{ sig.name }}
                 </div>
+                {% if sig.nickname %}
+                <div class="text-muted small fst-italic">"{{ sig.nickname }}"</div>
+                {% endif %}
                 <div class="text-muted small">{{ sig.branch }}</div>
               </td>
+
               <td>{{ sig.graduation_year }}</td>
+
               <td>
-                <span class="theme-dot theme-{{ sig.card_theme }}">{{ sig.card_theme|title }}</span>
+                <span class="theme-dot theme-{{ sig.card_theme }}">
+                  {{ sig.card_theme|title }}
+                </span>
               </td>
+
               <td>
-                <span class="status-badge status-{{ sig.status }}" id="status-{{ sig.id }}">
+                <span class="status-badge status-{{ sig.status }}"
+                      id="status-{{ sig.id }}">
                   {{ sig.status|title }}
                 </span>
               </td>
-              <td class="text-muted small">{{ sig.created_at.strftime('%b %d, %Y') }}</td>
+
+              <td class="text-muted small">
+                {{ sig.created_at.strftime('%b %d, %Y') }}
+              </td>
+
               <td>
                 <div class="action-btns">
-                  <a href="{{ url_for('view_signature', sig_id=sig.id) }}" target="_blank"
-                     class="act-btn view-btn" title="View"><i class="fas fa-eye"></i></a>
-                  <button class="act-btn approve-btn" title="Approve"
-                          onclick="setStatus({{ sig.id }},'approved')">
+
+                  <!-- View -->
+                  <a href="{{ url_for('view_signature', sig_id=sig.id) }}"
+                     target="_blank"
+                     class="act-btn view-btn" title="View signature">
+                    <i class="fas fa-eye"></i>
+                  </a>
+
+                  <!-- Approve -->
+                  <button class="act-btn approve-btn" title="Approve — show on wall"
+                          onclick="setStatus({{ sig.id }}, 'approved')">
                     <i class="fas fa-check"></i>
                   </button>
-                  <button class="act-btn pending-btn" title="Pending"
-                          onclick="setStatus({{ sig.id }},'pending')">
+
+                  <!-- Pending -->
+                  <button class="act-btn pending-btn" title="Set pending"
+                          onclick="setStatus({{ sig.id }}, 'pending')">
                     <i class="fas fa-clock"></i>
                   </button>
-                  <button class="act-btn delete-btn" title="Hide"
-                          onclick="deleteSig({{ sig.id }})">
+
+                  <!-- Soft delete / Hide -->
+                  <button class="act-btn delete-btn" title="Hide from wall"
+                          onclick="hideSig({{ sig.id }})">
                     <i class="fas fa-eye-slash"></i>
                   </button>
+
+                  <!-- Permanent delete — only shown for rejected -->
+                  {% if sig.status == 'rejected' %}
+                  <button class="act-btn perm-delete-btn"
+                          id="perm-{{ sig.id }}"
+                          title="⚠️ Delete permanently from DB + Cloudinary"
+                          onclick="permanentDelete({{ sig.id }}, '{{ sig.name }}')">
+                    <i class="fas fa-trash-alt"></i>
+                  </button>
+                  {% endif %}
+
                 </div>
               </td>
             </tr>
             {% else %}
             <tr>
-              <td colspan="9" class="text-center text-muted py-5">No signatures yet.</td>
+              <td colspan="9" class="text-center text-muted py-5">
+                No signatures yet.
+              </td>
             </tr>
             {% endfor %}
           </tbody>
@@ -190,81 +272,209 @@
 
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
-// Sidebar toggle (mobile)
+
+// ── Sidebar toggle ──────────────────────────────────────────────────────────
 document.getElementById('sidebarToggle')?.addEventListener('click', () => {
   document.getElementById('adminSidebar').classList.toggle('open');
 });
 
-// Search filter
-document.getElementById('adminSearch')?.addEventListener('input', function() {
-  const q = this.value.toLowerCase();
-  document.querySelectorAll('.sig-row').forEach(row => {
-    row.style.display = row.dataset.name.includes(q) ? '' : 'none';
+// ── Search + status filter ──────────────────────────────────────────────────
+function filterRows() {
+  const q      = document.getElementById('adminSearch').value.toLowerCase();
+  const status = document.getElementById('statusFilter').value;
+  const rows   = document.querySelectorAll('.sig-row');
+  let visible  = 0;
+  rows.forEach(row => {
+    const nameMatch   = row.dataset.name.includes(q);
+    const statusMatch = !status || row.dataset.status === status;
+    const show        = nameMatch && statusMatch;
+    row.style.display = show ? '' : 'none';
+    if (show) visible++;
   });
-});
+  const cnt = document.getElementById('rowCount');
+  if (cnt) cnt.textContent = visible + ' shown';
+}
+document.getElementById('adminSearch')?.addEventListener('input', filterRows);
+document.getElementById('statusFilter')?.addEventListener('change', filterRows);
 
-// Delete (soft)
-async function deleteSig(id) {
-  if (!confirm('Hide this signature from the public wall?')) return;
+// ── HIDE (soft delete) ──────────────────────────────────────────────────────
+async function hideSig(id) {
+  if (!confirm('Hide this signature from the public wall?\n(Can be restored by approving again)')) return;
+
   const btn = document.querySelector(`#row-${id} .delete-btn`);
   if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+
   try {
     const res = await fetch(`/admin/delete/${id}`, {
-      method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
     });
     const d = await res.json();
+
     if (d.success) {
-      const row = document.getElementById(`row-${id}`);
-      if (row) {
-        row.style.transition = 'opacity .4s, transform .4s';
-        row.style.opacity = '0'; row.style.transform = 'translateX(20px)';
-        setTimeout(() => row.remove(), 420);
+      // Update status badge
+      const badge = document.getElementById(`status-${id}`);
+      if (badge) {
+        badge.className = 'status-badge status-rejected';
+        badge.textContent = 'Hidden';
       }
-      showToast('Signature hidden ✅', 'success');
+      // Update row data-status
+      const row = document.getElementById(`row-${id}`);
+      if (row) row.dataset.status = 'rejected';
+
+      // Show permanent delete button if not already there
+      const actionDiv = document.querySelector(`#row-${id} .action-btns`);
+      if (actionDiv && !document.getElementById(`perm-${id}`)) {
+        const name = row?.querySelector('[style*="cursive"]')?.textContent?.trim() || '';
+        const permBtn = document.createElement('button');
+        permBtn.className = 'act-btn perm-delete-btn';
+        permBtn.id        = `perm-${id}`;
+        permBtn.title     = '⚠️ Delete permanently from DB + Cloudinary';
+        permBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+        permBtn.onclick   = () => permanentDelete(id, name);
+        actionDiv.appendChild(permBtn);
+      }
+
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-eye-slash"></i>'; }
+      showToast('👁️ Signature hidden from wall', 'success');
+      filterRows();
+    } else {
+      showToast('Error: ' + (d.error || 'Failed'), 'danger');
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-eye-slash"></i>'; }
     }
-  } catch(e) {
+  } catch (e) {
+    console.error(e);
     showToast('Network error', 'danger');
-    if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-eye-slash"></i>'; }
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-eye-slash"></i>'; }
   }
 }
 
-// Status change
+// ── PERMANENT DELETE ─────────────────────────────────────────────────────────
+async function permanentDelete(id, name) {
+  const confirmed = confirm(
+    `⚠️ PERMANENTLY DELETE?\n\n` +
+    `Name: ${name || id}\n\n` +
+    `This will:\n` +
+    `• Remove from database forever\n` +
+    `• Delete image from Cloudinary\n\n` +
+    `This CANNOT be undone!`
+  );
+  if (!confirmed) return;
+
+  const btn = document.getElementById(`perm-${id}`);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+
+  try {
+    const res = await fetch(`/admin/permanent-delete/${id}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: '{}'
+    });
+    const d = await res.json();
+
+    if (d.success) {
+      // Animate row removal
+      const row = document.getElementById(`row-${id}`);
+      if (row) {
+        row.style.transition = 'opacity .5s, transform .5s';
+        row.style.opacity    = '0';
+        row.style.transform  = 'translateX(40px)';
+        setTimeout(() => { row.remove(); filterRows(); }, 520);
+      }
+      showToast('🗑️ Permanently deleted from DB + Cloudinary', 'success');
+    } else {
+      showToast('Error: ' + (d.error || 'Cannot delete — hide it first'), 'danger');
+      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash-alt"></i>'; }
+    }
+  } catch (e) {
+    console.error(e);
+    showToast('Network error', 'danger');
+    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash-alt"></i>'; }
+  }
+}
+
+// ── STATUS CHANGE ─────────────────────────────────────────────────────────────
 async function setStatus(id, status) {
   try {
     const res = await fetch(`/admin/status/${id}`, {
-      method:'POST', headers:{'Content-Type':'application/json'},
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ status })
     });
     const d = await res.json();
+
     if (d.success) {
-      const el = document.getElementById(`status-${id}`);
-      if (el) {
-        el.className = `status-badge status-${status}`;
-        el.textContent = status.charAt(0).toUpperCase() + status.slice(1);
+      const badge = document.getElementById(`status-${id}`);
+      if (badge) {
+        badge.className  = `status-badge status-${status}`;
+        badge.textContent = status === 'rejected' ? 'Hidden' : status.charAt(0).toUpperCase() + status.slice(1);
       }
+
       const row = document.getElementById(`row-${id}`);
       if (row) {
+        row.dataset.status = status;
         row.style.background = 'rgba(226,201,126,0.06)';
-        setTimeout(() => row.style.background = '', 1200);
+        setTimeout(() => { row.style.background = ''; }, 1200);
+
+        // Show perm delete btn if now rejected
+        const actionDiv = row.querySelector('.action-btns');
+        const existingPerm = document.getElementById(`perm-${id}`);
+        if (status === 'rejected' && actionDiv && !existingPerm) {
+          const name = row.querySelector('[style*="cursive"]')?.textContent?.trim() || '';
+          const permBtn = document.createElement('button');
+          permBtn.className = 'act-btn perm-delete-btn';
+          permBtn.id        = `perm-${id}`;
+          permBtn.title     = '⚠️ Delete permanently';
+          permBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+          permBtn.onclick   = () => permanentDelete(id, name);
+          actionDiv.appendChild(permBtn);
+        }
+        // Hide perm delete btn if no longer rejected
+        if (status !== 'rejected' && existingPerm) {
+          existingPerm.remove();
+        }
       }
-      showToast(`Status → ${status} ✅`, 'success');
+
+      const labels = { approved: 'Approved ✅', pending: 'Set to pending', rejected: 'Hidden from wall' };
+      showToast(labels[status] || 'Status updated', 'success');
+      filterRows();
     }
-  } catch(e) { showToast('Network error', 'danger'); }
+  } catch (e) {
+    console.error(e);
+    showToast('Network error', 'danger');
+  }
 }
 
-// Toast
-function showToast(msg, type='success') {
+// ── TOAST ─────────────────────────────────────────────────────────────────────
+function showToast(msg, type = 'success') {
   const old = document.getElementById('adminToast');
   if (old) old.remove();
+
+  const colors = {
+    success: 'rgba(76,175,80,0.15)',
+    danger:  'rgba(244,67,54,0.15)',
+  };
+
   const t = document.createElement('div');
   t.id = 'adminToast';
-  t.style.cssText = `position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;
-    background:rgba(13,13,30,.95);border:1px solid rgba(226,201,126,.25);
-    border-radius:12px;padding:.75rem 1.25rem;color:#f0ede6;font-size:.88rem;
-    backdrop-filter:blur(12px);max-width:300px;animation:fadeInUp .3s ease`;
+  t.style.cssText = `
+    position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;
+    background:${colors[type] || colors.success};
+    border:1px solid rgba(226,201,126,.22);
+    border-radius:12px;padding:.75rem 1.25rem;
+    color:var(--text-primary);font-size:.88rem;
+    backdrop-filter:blur(12px);max-width:320px;
+    animation:fadeInUp .3s ease;box-shadow:0 8px 24px rgba(0,0,0,.4);
+  `;
   t.textContent = msg;
   document.body.appendChild(t);
-  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),300); }, 3000);
+
+  setTimeout(() => {
+    t.style.opacity    = '0';
+    t.style.transition = 'opacity .3s';
+    setTimeout(() => t.remove(), 320);
+  }, 3500);
 }
 </script>
 </body>
