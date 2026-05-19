@@ -14,12 +14,9 @@
 
 <div class="admin-layout">
 
-  <!-- ── SIDEBAR ── -->
+  <!-- SIDEBAR -->
   <aside class="admin-sidebar" id="adminSidebar">
-    <div class="sidebar-brand">
-      <span>🎓</span>
-      <span class="brand-text">FarewellInk</span>
-    </div>
+    <div class="sidebar-brand"><span>🎓</span><span class="brand-text">FarewellInk</span></div>
     <nav class="sidebar-nav">
       <a href="{{ url_for('admin_dashboard') }}" class="snav-link active">
         <i class="fas fa-chart-bar"></i><span>Dashboard</span>
@@ -30,6 +27,9 @@
       <a href="{{ url_for('admin_export') }}" class="snav-link">
         <i class="fas fa-file-csv"></i><span>Export CSV</span>
       </a>
+      <a href="{{ url_for('admin_backup_all') }}" class="snav-link">
+        <i class="fas fa-database"></i><span>Backup JSON</span>
+      </a>
     </nav>
     <div class="sidebar-footer">
       <a href="{{ url_for('admin_logout') }}" class="snav-link logout-link">
@@ -38,14 +38,12 @@
     </div>
   </aside>
 
-  <!-- ── MAIN ── -->
+  <!-- MAIN -->
   <main class="admin-main">
 
-    <!-- Top Bar -->
+    <!-- Topbar -->
     <div class="admin-topbar">
-      <button class="sidebar-toggle" id="sidebarToggle">
-        <i class="fas fa-bars"></i>
-      </button>
+      <button class="sidebar-toggle" id="sidebarToggle"><i class="fas fa-bars"></i></button>
       <h1 class="admin-page-title">Dashboard</h1>
       <div class="topbar-actions">
         <a href="{{ url_for('admin_export') }}" class="btn fi-btn-ghost btn-sm">
@@ -67,9 +65,7 @@
         (visitor_count, 'Visitors', 'fa-users',       '#64b5f6'),
       ] %}
       <div class="stat-box">
-        <div class="stat-icon" style="color:{{ color }}">
-          <i class="fas {{ icon }}"></i>
-        </div>
+        <div class="stat-icon" style="color:{{ color }}"><i class="fas {{ icon }}"></i></div>
         <div class="stat-val" style="color:{{ color }}">{{ val }}</div>
         <div class="stat-lbl">{{ lbl }}</div>
       </div>
@@ -78,11 +74,9 @@
 
     <!-- Branches -->
     <div class="admin-card mb-3">
-      <div class="admin-card-title mb-2">
-        <i class="fas fa-sitemap me-2"></i>By Branch
-      </div>
+      <div class="admin-card-title mb-2"><i class="fas fa-sitemap me-2"></i>By Branch</div>
       <div class="branch-chips">
-        {% for branch, count in branches %}
+        {% for branch,count in branches %}
         <span class="branch-chip">{{ branch }} <strong>{{ count }}</strong></span>
         {% else %}
         <span class="text-muted small">No data yet</span>
@@ -90,42 +84,25 @@
       </div>
     </div>
 
-    <!-- Legend -->
+    <!-- Action Legend -->
     <div class="admin-card mb-3">
-      <div class="admin-card-title mb-2">
-        <i class="fas fa-info-circle me-2"></i>Action Guide
-      </div>
-      <div class="d-flex flex-wrap gap-3">
-        <div class="legend-item">
-          <span class="act-btn view-btn" style="display:inline-flex"><i class="fas fa-eye"></i></span>
-          <span>View signature</span>
-        </div>
-        <div class="legend-item">
-          <span class="act-btn approve-btn" style="display:inline-flex"><i class="fas fa-check"></i></span>
-          <span>Approve — show on wall</span>
-        </div>
-        <div class="legend-item">
-          <span class="act-btn pending-btn" style="display:inline-flex"><i class="fas fa-clock"></i></span>
-          <span>Set pending</span>
-        </div>
-        <div class="legend-item">
-          <span class="act-btn delete-btn" style="display:inline-flex"><i class="fas fa-eye-slash"></i></span>
-          <span>Hide from wall</span>
-        </div>
-        <div class="legend-item">
-          <span class="act-btn perm-delete-btn" style="display:inline-flex"><i class="fas fa-trash-alt"></i></span>
-          <span>Permanently delete (only hidden)</span>
-        </div>
+      <div class="admin-card-title mb-2"><i class="fas fa-info-circle me-2"></i>Action Guide</div>
+      <div class="d-flex flex-wrap gap-3 align-items-center">
+        <div class="legend-item"><span class="act-btn view-btn" style="display:inline-flex"><i class="fas fa-eye"></i></span><span>View</span></div>
+        <div class="legend-item"><span class="act-btn approve-btn" style="display:inline-flex"><i class="fas fa-check"></i></span><span>Approve</span></div>
+        <div class="legend-item"><span class="act-btn pending-btn" style="display:inline-flex"><i class="fas fa-clock"></i></span><span>Pending</span></div>
+        <div class="legend-item"><span class="act-btn delete-btn" style="display:inline-flex"><i class="fas fa-eye-slash"></i></span><span>Hide</span></div>
+        <div class="legend-item"><span class="act-btn upload-btn" style="display:inline-flex"><i class="fas fa-cloud-upload-alt"></i></span><span>Upload photo/signature</span></div>
+        <div class="legend-item"><span class="act-btn perm-delete-btn" style="display:inline-flex"><i class="fas fa-trash-alt"></i></span><span>Permanent delete (hidden only)</span></div>
       </div>
     </div>
 
-    <!-- Search -->
+    <!-- Search + Filter -->
     <div class="admin-card mb-3">
       <div class="d-flex align-items-center gap-3 flex-wrap">
         <div class="flex-grow-1" style="position:relative;min-width:200px">
           <i class="fas fa-search" style="position:absolute;left:.9rem;top:50%;transform:translateY(-50%);color:var(--text-muted)"></i>
-          <input type="text" id="adminSearch" class="form-control fi-input ps-5"
-                 placeholder="Search by name…"/>
+          <input type="text" id="adminSearch" class="form-control fi-input ps-5" placeholder="Search by name…"/>
         </div>
         <select id="statusFilter" class="form-select fi-input" style="max-width:160px">
           <option value="">All Status</option>
@@ -139,9 +116,7 @@
 
     <!-- Table -->
     <div class="admin-card">
-      <div class="admin-card-title mb-3">
-        <i class="fas fa-list me-2"></i>Recent Signatures
-      </div>
+      <div class="admin-card-title mb-3"><i class="fas fa-list me-2"></i>Signatures</div>
       <div class="table-responsive">
         <table class="admin-table" id="sigTable">
           <thead>
@@ -159,32 +134,37 @@
           </thead>
           <tbody>
             {% for sig in recent %}
-            <tr id="row-{{ sig.id }}"
-                class="sig-row"
+            <tr id="row-{{ sig.id }}" class="sig-row"
                 data-name="{{ sig.name|lower }}"
                 data-status="{{ sig.status }}">
+
               <td class="text-muted small">{{ sig.id }}</td>
 
+              <!-- Profile Photo -->
               <td>
                 {% if sig.profile_photo %}
                   <img src="{{ sig.profile_photo }}"
-                       class="admin-avatar" alt="photo"
+                       class="admin-avatar" id="photo-img-{{ sig.id }}" alt="photo"
                        onerror="this.outerHTML='<div class=admin-avatar-placeholder>{{ sig.name[0].upper() }}</div>'"/>
                 {% else %}
-                  <div class="admin-avatar-placeholder">{{ sig.name[0].upper() }}</div>
+                  <div class="admin-avatar-placeholder" id="photo-img-{{ sig.id }}">
+                    {{ sig.name[0].upper() }}
+                  </div>
                 {% endif %}
               </td>
 
+              <!-- Signature Image -->
               <td>
                 {% if sig.signature_image %}
                   <img src="{{ sig.signature_image }}"
-                       class="sig-thumb" alt="signature"
+                       class="sig-thumb" id="sig-img-{{ sig.id }}" alt="signature"
                        onerror="this.style.display='none'"/>
                 {% else %}
-                  <span class="text-muted">—</span>
+                  <span class="text-muted" id="sig-img-{{ sig.id }}">—</span>
                 {% endif %}
               </td>
 
+              <!-- Name / Branch -->
               <td>
                 <div style="font-family:'{{ sig.font }}',cursive;font-size:.95rem;color:var(--gold)">
                   {{ sig.name }}
@@ -198,56 +178,58 @@
               <td>{{ sig.graduation_year }}</td>
 
               <td>
-                <span class="theme-dot theme-{{ sig.card_theme }}">
-                  {{ sig.card_theme|title }}
-                </span>
+                <span class="theme-dot theme-{{ sig.card_theme }}">{{ sig.card_theme|title }}</span>
               </td>
 
               <td>
-                <span class="status-badge status-{{ sig.status }}"
-                      id="status-{{ sig.id }}">
-                  {{ sig.status|title }}
+                <span class="status-badge status-{{ sig.status }}" id="status-{{ sig.id }}">
+                  {{ 'Hidden' if sig.status == 'rejected' else sig.status|title }}
                 </span>
               </td>
 
-              <td class="text-muted small">
-                {{ sig.created_at.strftime('%b %d, %Y') }}
-              </td>
+              <td class="text-muted small">{{ sig.created_at.strftime('%b %d, %Y') }}</td>
 
+              <!-- Actions -->
               <td>
                 <div class="action-btns">
 
                   <!-- View -->
-                  <a href="{{ url_for('view_signature', sig_id=sig.id) }}"
-                     target="_blank"
-                     class="act-btn view-btn" title="View signature">
+                  <a href="{{ url_for('view_signature', sig_id=sig.id) }}" target="_blank"
+                     class="act-btn view-btn" title="View">
                     <i class="fas fa-eye"></i>
                   </a>
 
                   <!-- Approve -->
-                  <button class="act-btn approve-btn" title="Approve — show on wall"
+                  <button class="act-btn approve-btn" title="Approve"
                           onclick="setStatus({{ sig.id }}, 'approved')">
                     <i class="fas fa-check"></i>
                   </button>
 
                   <!-- Pending -->
-                  <button class="act-btn pending-btn" title="Set pending"
+                  <button class="act-btn pending-btn" title="Set Pending"
                           onclick="setStatus({{ sig.id }}, 'pending')">
                     <i class="fas fa-clock"></i>
                   </button>
 
-                  <!-- Soft delete / Hide -->
+                  <!-- Hide -->
                   <button class="act-btn delete-btn" title="Hide from wall"
                           onclick="hideSig({{ sig.id }})">
                     <i class="fas fa-eye-slash"></i>
                   </button>
 
-                  <!-- Permanent delete — only shown for rejected -->
+                  <!-- ✅ Upload Photo / Signature -->
+                  <button class="act-btn upload-btn" title="Upload photo or signature"
+                          onclick="openUploadModal({{ sig.id }}, '{{ sig.name|replace("'","") }}',
+                            '{{ sig.profile_photo or '' }}',
+                            '{{ sig.signature_image or '' }}')">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                  </button>
+
+                  <!-- Permanent Delete (hidden only) -->
                   {% if sig.status == 'rejected' %}
-                  <button class="act-btn perm-delete-btn"
-                          id="perm-{{ sig.id }}"
-                          title="⚠️ Delete permanently from DB + Cloudinary"
-                          onclick="permanentDelete({{ sig.id }}, '{{ sig.name }}')">
+                  <button class="act-btn perm-delete-btn" id="perm-{{ sig.id }}"
+                          title="Delete permanently"
+                          onclick="permanentDelete({{ sig.id }}, '{{ sig.name|replace("'","") }}')">
                     <i class="fas fa-trash-alt"></i>
                   </button>
                   {% endif %}
@@ -257,9 +239,7 @@
             </tr>
             {% else %}
             <tr>
-              <td colspan="9" class="text-center text-muted py-5">
-                No signatures yet.
-              </td>
+              <td colspan="9" class="text-center text-muted py-5">No signatures yet.</td>
             </tr>
             {% endfor %}
           </tbody>
@@ -270,24 +250,139 @@
   </main>
 </div>
 
+<!-- ══════════════════════════════════════════════════════════════
+     UPLOAD MODAL
+══════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content fi-modal">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title" style="font-family:var(--font-display);color:var(--gold)">
+          <i class="fas fa-cloud-upload-alt me-2"></i>
+          Upload Images — <span id="uploadModalName"></span>
+        </h5>
+        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body p-4">
+
+        <div class="row g-4">
+
+          <!-- Profile Photo Upload -->
+          <div class="col-md-6">
+            <div class="upload-section">
+              <div class="upload-section-title">
+                <i class="fas fa-user-circle me-2" style="color:#64b5f6"></i>
+                Profile Photo
+              </div>
+
+              <!-- Current photo preview -->
+              <div class="upload-current-wrap" id="currentPhotoWrap">
+                <div class="upload-current-label">Current:</div>
+                <div class="upload-current-img" id="currentPhotoPreview">
+                  <span class="text-muted small">No photo</span>
+                </div>
+              </div>
+
+              <!-- New photo upload -->
+              <div class="upload-drop-zone" id="photoDropZone"
+                   onclick="document.getElementById('photoFileInput').click()">
+                <i class="fas fa-camera upload-drop-icon"></i>
+                <p>Click to choose photo</p>
+                <p class="upload-drop-hint">JPG, PNG, WEBP — max 5MB</p>
+              </div>
+              <input type="file" id="photoFileInput" accept="image/*" hidden/>
+
+              <!-- Preview of new photo -->
+              <div id="photoNewPreview" class="upload-new-preview d-none">
+                <img id="photoNewImg" src="" alt="new photo"/>
+                <button class="upload-clear-btn" onclick="clearUpload('photo')">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+
+              <button class="btn fi-btn-primary w-100 mt-3" id="uploadPhotoBtn"
+                      onclick="uploadImage('photo')" disabled>
+                <i class="fas fa-upload me-2"></i>Upload Profile Photo
+              </button>
+              <div class="upload-progress d-none" id="photoProgress">
+                <div class="upload-progress-bar" id="photoProgressBar"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Signature Upload -->
+          <div class="col-md-6">
+            <div class="upload-section">
+              <div class="upload-section-title">
+                <i class="fas fa-signature me-2" style="color:var(--gold)"></i>
+                Signature Image
+              </div>
+
+              <!-- Current signature preview -->
+              <div class="upload-current-wrap" id="currentSigWrap">
+                <div class="upload-current-label">Current:</div>
+                <div class="upload-current-img" id="currentSigPreview">
+                  <span class="text-muted small">No signature</span>
+                </div>
+              </div>
+
+              <!-- New sig upload -->
+              <div class="upload-drop-zone" id="sigDropZone"
+                   onclick="document.getElementById('sigFileInput').click()">
+                <i class="fas fa-pen-nib upload-drop-icon"></i>
+                <p>Click to choose signature</p>
+                <p class="upload-drop-hint">JPG, PNG — max 5MB</p>
+              </div>
+              <input type="file" id="sigFileInput" accept="image/*" hidden/>
+
+              <!-- Preview of new sig -->
+              <div id="sigNewPreview" class="upload-new-preview d-none">
+                <img id="sigNewImg" src="" alt="new signature"/>
+                <button class="upload-clear-btn" onclick="clearUpload('sig')">
+                  <i class="fas fa-times"></i>
+                </button>
+              </div>
+
+              <button class="btn fi-btn-primary w-100 mt-3" id="uploadSigBtn"
+                      onclick="uploadImage('signature')" disabled>
+                <i class="fas fa-upload me-2"></i>Upload Signature
+              </button>
+              <div class="upload-progress d-none" id="sigProgress">
+                <div class="upload-progress-bar" id="sigProgressBar"></div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn fi-btn-ghost" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 <script>
 
-// ── Sidebar toggle ──────────────────────────────────────────────────────────
+// ── State ─────────────────────────────────────────────────────────────────────
+let currentSigId   = null;
+let photoFile      = null;
+let sigFile        = null;
+const uploadModal  = new bootstrap.Modal(document.getElementById('uploadModal'));
+
+// ── Sidebar ───────────────────────────────────────────────────────────────────
 document.getElementById('sidebarToggle')?.addEventListener('click', () => {
   document.getElementById('adminSidebar').classList.toggle('open');
 });
 
-// ── Search + status filter ──────────────────────────────────────────────────
+// ── Search + Filter ────────────────────────────────────────────────────────────
 function filterRows() {
   const q      = document.getElementById('adminSearch').value.toLowerCase();
   const status = document.getElementById('statusFilter').value;
-  const rows   = document.querySelectorAll('.sig-row');
   let visible  = 0;
-  rows.forEach(row => {
-    const nameMatch   = row.dataset.name.includes(q);
-    const statusMatch = !status || row.dataset.status === status;
-    const show        = nameMatch && statusMatch;
+  document.querySelectorAll('.sig-row').forEach(row => {
+    const show = row.dataset.name.includes(q) && (!status || row.dataset.status === status);
     row.style.display = show ? '' : 'none';
     if (show) visible++;
   });
@@ -297,84 +392,222 @@ function filterRows() {
 document.getElementById('adminSearch')?.addEventListener('input', filterRows);
 document.getElementById('statusFilter')?.addEventListener('change', filterRows);
 
-// ── HIDE (soft delete) ──────────────────────────────────────────────────────
-async function hideSig(id) {
-  if (!confirm('Hide this signature from the public wall?\n(Can be restored by approving again)')) return;
+// ══════════════════════════════════════════════════════════════════════════════
+// UPLOAD MODAL
+// ══════════════════════════════════════════════════════════════════════════════
 
-  const btn = document.querySelector(`#row-${id} .delete-btn`);
-  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+function openUploadModal(id, name, currentPhoto, currentSig) {
+  currentSigId = id;
 
-  try {
-    const res = await fetch(`/admin/delete/${id}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: '{}'
-    });
-    const d = await res.json();
+  // Set modal title
+  document.getElementById('uploadModalName').textContent = name;
 
-    if (d.success) {
-      // Update status badge
-      const badge = document.getElementById(`status-${id}`);
-      if (badge) {
-        badge.className = 'status-badge status-rejected';
-        badge.textContent = 'Hidden';
-      }
-      // Update row data-status
-      const row = document.getElementById(`row-${id}`);
-      if (row) row.dataset.status = 'rejected';
+  // Show current photo
+  const photoWrap = document.getElementById('currentPhotoPreview');
+  if (currentPhoto && currentPhoto.startsWith('http')) {
+    photoWrap.innerHTML = `<img src="${currentPhoto}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--glass-border)"/>`;
+  } else {
+    photoWrap.innerHTML = `<span class="text-muted small">No photo uploaded</span>`;
+  }
 
-      // Show permanent delete button if not already there
-      const actionDiv = document.querySelector(`#row-${id} .action-btns`);
-      if (actionDiv && !document.getElementById(`perm-${id}`)) {
-        const name = row?.querySelector('[style*="cursive"]')?.textContent?.trim() || '';
-        const permBtn = document.createElement('button');
-        permBtn.className = 'act-btn perm-delete-btn';
-        permBtn.id        = `perm-${id}`;
-        permBtn.title     = '⚠️ Delete permanently from DB + Cloudinary';
-        permBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
-        permBtn.onclick   = () => permanentDelete(id, name);
-        actionDiv.appendChild(permBtn);
-      }
+  // Show current signature
+  const sigWrap = document.getElementById('currentSigPreview');
+  if (currentSig && currentSig.startsWith('http')) {
+    sigWrap.innerHTML = `<img src="${currentSig}" style="max-width:100%;max-height:100px;object-fit:contain;border-radius:8px;background:rgba(0,0,0,.3);padding:8px"/>`;
+  } else {
+    sigWrap.innerHTML = `<span class="text-muted small">No signature uploaded</span>`;
+  }
 
-      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-eye-slash"></i>'; }
-      showToast('👁️ Signature hidden from wall', 'success');
-      filterRows();
-    } else {
-      showToast('Error: ' + (d.error || 'Failed'), 'danger');
-      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-eye-slash"></i>'; }
-    }
-  } catch (e) {
-    console.error(e);
-    showToast('Network error', 'danger');
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-eye-slash"></i>'; }
+  // Reset file inputs and previews
+  clearUpload('photo');
+  clearUpload('sig');
+
+  uploadModal.show();
+}
+
+// ── File input listeners ───────────────────────────────────────────────────────
+document.getElementById('photoFileInput').addEventListener('change', function () {
+  const file = this.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('Photo too large — max 5MB', 'danger'); return; }
+  photoFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('photoNewImg').src = e.target.result;
+    document.getElementById('photoNewPreview').classList.remove('d-none');
+    document.getElementById('photoDropZone').classList.add('d-none');
+    document.getElementById('uploadPhotoBtn').disabled = false;
+  };
+  reader.readAsDataURL(file);
+});
+
+document.getElementById('sigFileInput').addEventListener('change', function () {
+  const file = this.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) { showToast('File too large — max 5MB', 'danger'); return; }
+  sigFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('sigNewImg').src = e.target.result;
+    document.getElementById('sigNewPreview').classList.remove('d-none');
+    document.getElementById('sigDropZone').classList.add('d-none');
+    document.getElementById('uploadSigBtn').disabled = false;
+  };
+  reader.readAsDataURL(file);
+});
+
+// ── Drag & drop ────────────────────────────────────────────────────────────────
+['photoDropZone', 'sigDropZone'].forEach(zoneId => {
+  const zone = document.getElementById(zoneId);
+  zone.addEventListener('dragover',  e => { e.preventDefault(); zone.classList.add('drag-over'); });
+  zone.addEventListener('dragleave', ()  => zone.classList.remove('drag-over'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('drag-over');
+    const file   = e.dataTransfer.files[0];
+    const inputId = zoneId === 'photoDropZone' ? 'photoFileInput' : 'sigFileInput';
+    const dt = new DataTransfer();
+    dt.items.add(file);
+    document.getElementById(inputId).files = dt.files;
+    document.getElementById(inputId).dispatchEvent(new Event('change'));
+  });
+});
+
+// ── Clear upload ───────────────────────────────────────────────────────────────
+function clearUpload(type) {
+  if (type === 'photo') {
+    photoFile = null;
+    document.getElementById('photoFileInput').value = '';
+    document.getElementById('photoNewPreview').classList.add('d-none');
+    document.getElementById('photoDropZone').classList.remove('d-none');
+    document.getElementById('uploadPhotoBtn').disabled = true;
+  } else {
+    sigFile = null;
+    document.getElementById('sigFileInput').value = '';
+    document.getElementById('sigNewPreview').classList.add('d-none');
+    document.getElementById('sigDropZone').classList.remove('d-none');
+    document.getElementById('uploadSigBtn').disabled = true;
   }
 }
 
-// ── PERMANENT DELETE ─────────────────────────────────────────────────────────
-async function permanentDelete(id, name) {
-  const confirmed = confirm(
-    `⚠️ PERMANENTLY DELETE?\n\n` +
-    `Name: ${name || id}\n\n` +
-    `This will:\n` +
-    `• Remove from database forever\n` +
-    `• Delete image from Cloudinary\n\n` +
-    `This CANNOT be undone!`
-  );
-  if (!confirmed) return;
+// ── Upload ─────────────────────────────────────────────────────────────────────
+async function uploadImage(type) {
+  if (!currentSigId) return;
+  const file     = type === 'photo' ? photoFile : sigFile;
+  const btn      = document.getElementById(type === 'photo' ? 'uploadPhotoBtn' : 'uploadSigBtn');
+  const progress = document.getElementById(type === 'photo' ? 'photoProgress' : 'sigProgress');
+  const bar      = document.getElementById(type === 'photo' ? 'photoProgressBar' : 'sigProgressBar');
 
-  const btn = document.getElementById(`perm-${id}`);
-  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+  if (!file) { showToast('Please choose a file first', 'danger'); return; }
+
+  // Show progress
+  btn.disabled       = true;
+  btn.innerHTML      = '<i class="fas fa-spinner fa-spin me-2"></i>Uploading…';
+  progress.classList.remove('d-none');
+
+  // Animate progress bar
+  let pct = 0;
+  const interval = setInterval(() => {
+    pct = Math.min(pct + Math.random() * 15, 90);
+    bar.style.width = pct + '%';
+  }, 200);
+
+  const formData = new FormData();
+  formData.append('type', type === 'photo' ? 'photo' : 'signature');
+  formData.append('file', file);
 
   try {
-    const res = await fetch(`/admin/permanent-delete/${id}`, {
+    const res  = await fetch(`/admin/upload-image/${currentSigId}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: '{}'
+      body:   formData,
+    });
+    const data = await res.json();
+
+    clearInterval(interval);
+    bar.style.width = '100%';
+
+    if (data.success) {
+      showToast(`✅ ${type === 'photo' ? 'Profile photo' : 'Signature'} uploaded!`, 'success');
+
+      // Update the table row images
+      if (type === 'photo') {
+        const photoEl = document.getElementById(`photo-img-${currentSigId}`);
+        if (photoEl) {
+          photoEl.outerHTML = `<img src="${data.url}" class="admin-avatar" id="photo-img-${currentSigId}" alt="photo"/>`;
+        }
+        // Update current preview in modal
+        document.getElementById('currentPhotoPreview').innerHTML =
+          `<img src="${data.url}" style="width:80px;height:80px;border-radius:50%;object-fit:cover;border:2px solid var(--gold)"/>`;
+      } else {
+        const sigEl = document.getElementById(`sig-img-${currentSigId}`);
+        if (sigEl) {
+          if (sigEl.tagName === 'IMG') {
+            sigEl.src = data.url;
+          } else {
+            sigEl.outerHTML = `<img src="${data.url}" class="sig-thumb" id="sig-img-${currentSigId}" alt="signature"/>`;
+          }
+        }
+        // Update current preview in modal
+        document.getElementById('currentSigPreview').innerHTML =
+          `<img src="${data.url}" style="max-width:100%;max-height:100px;object-fit:contain;border-radius:8px;background:rgba(0,0,0,.3);padding:8px"/>`;
+      }
+
+      clearUpload(type === 'photo' ? 'photo' : 'sig');
+      setTimeout(() => { progress.classList.add('d-none'); bar.style.width = '0'; }, 1000);
+
+    } else {
+      showToast('❌ Upload failed: ' + (data.error || 'Unknown error'), 'danger');
+      setTimeout(() => { progress.classList.add('d-none'); bar.style.width = '0'; }, 500);
+    }
+  } catch (e) {
+    clearInterval(interval);
+    console.error(e);
+    showToast('❌ Network error — check connection', 'danger');
+    progress.classList.add('d-none');
+  } finally {
+    btn.disabled  = false;
+    btn.innerHTML = `<i class="fas fa-upload me-2"></i>Upload ${type === 'photo' ? 'Profile Photo' : 'Signature'}`;
+  }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// HIDE (soft delete)
+// ══════════════════════════════════════════════════════════════════════════════
+async function hideSig(id) {
+  if (!confirm('Hide this signature from the public wall?\n(Can be restored by approving again)')) return;
+  const btn = document.querySelector(`#row-${id} .delete-btn`);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>'; }
+  try {
+    const res = await fetch(`/admin/delete/${id}`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'
     });
     const d = await res.json();
-
     if (d.success) {
-      // Animate row removal
+      updateStatusBadge(id, 'rejected');
+      const row = document.getElementById(`row-${id}`);
+      if (row) row.dataset.status = 'rejected';
+      addPermDeleteBtn(id, row);
+      showToast('👁️ Hidden from wall', 'success');
+      filterRows();
+    } else {
+      showToast('Error: ' + (d.error || 'Failed'), 'danger');
+    }
+  } catch(e) { showToast('Network error', 'danger'); }
+  finally { if(btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-eye-slash"></i>'; } }
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// PERMANENT DELETE
+// ══════════════════════════════════════════════════════════════════════════════
+async function permanentDelete(id, name) {
+  if (!confirm(`⚠️ PERMANENTLY DELETE?\n\nName: ${name}\n\nThis removes from DB + Cloudinary.\nCANNOT be undone!`)) return;
+  const btn = document.getElementById(`perm-${id}`);
+  if (btn) { btn.disabled=true; btn.innerHTML='<i class="fas fa-spinner fa-spin"></i>'; }
+  try {
+    const res = await fetch(`/admin/permanent-delete/${id}`, {
+      method:'POST', headers:{'Content-Type':'application/json'}, body:'{}'
+    });
+    const d = await res.json();
+    if (d.success) {
       const row = document.getElementById(`row-${id}`);
       if (row) {
         row.style.transition = 'opacity .5s, transform .5s';
@@ -382,99 +615,83 @@ async function permanentDelete(id, name) {
         row.style.transform  = 'translateX(40px)';
         setTimeout(() => { row.remove(); filterRows(); }, 520);
       }
-      showToast('🗑️ Permanently deleted from DB + Cloudinary', 'success');
+      showToast('🗑️ Permanently deleted', 'success');
     } else {
-      showToast('Error: ' + (d.error || 'Cannot delete — hide it first'), 'danger');
-      if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash-alt"></i>'; }
+      showToast('Error: ' + (d.error || 'Hide it first'), 'danger');
+      if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-trash-alt"></i>'; }
     }
-  } catch (e) {
-    console.error(e);
+  } catch(e) {
     showToast('Network error', 'danger');
-    if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-trash-alt"></i>'; }
+    if (btn) { btn.disabled=false; btn.innerHTML='<i class="fas fa-trash-alt"></i>'; }
   }
 }
 
-// ── STATUS CHANGE ─────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// STATUS CHANGE
+// ══════════════════════════════════════════════════════════════════════════════
 async function setStatus(id, status) {
   try {
     const res = await fetch(`/admin/status/${id}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status })
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({status})
     });
     const d = await res.json();
-
     if (d.success) {
-      const badge = document.getElementById(`status-${id}`);
-      if (badge) {
-        badge.className  = `status-badge status-${status}`;
-        badge.textContent = status === 'rejected' ? 'Hidden' : status.charAt(0).toUpperCase() + status.slice(1);
-      }
-
+      updateStatusBadge(id, status);
       const row = document.getElementById(`row-${id}`);
       if (row) {
-        row.dataset.status = status;
+        row.dataset.status   = status;
         row.style.background = 'rgba(226,201,126,0.06)';
-        setTimeout(() => { row.style.background = ''; }, 1200);
-
-        // Show perm delete btn if now rejected
-        const actionDiv = row.querySelector('.action-btns');
-        const existingPerm = document.getElementById(`perm-${id}`);
-        if (status === 'rejected' && actionDiv && !existingPerm) {
-          const name = row.querySelector('[style*="cursive"]')?.textContent?.trim() || '';
-          const permBtn = document.createElement('button');
-          permBtn.className = 'act-btn perm-delete-btn';
-          permBtn.id        = `perm-${id}`;
-          permBtn.title     = '⚠️ Delete permanently';
-          permBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
-          permBtn.onclick   = () => permanentDelete(id, name);
-          actionDiv.appendChild(permBtn);
-        }
-        // Hide perm delete btn if no longer rejected
-        if (status !== 'rejected' && existingPerm) {
-          existingPerm.remove();
+        setTimeout(() => { row.style.background=''; }, 1200);
+        if (status === 'rejected') addPermDeleteBtn(id, row);
+        else {
+          const p = document.getElementById(`perm-${id}`);
+          if (p) p.remove();
         }
       }
-
-      const labels = { approved: 'Approved ✅', pending: 'Set to pending', rejected: 'Hidden from wall' };
-      showToast(labels[status] || 'Status updated', 'success');
+      const labels = {approved:'Approved ✅', pending:'Set to pending ⏳', rejected:'Hidden from wall 👁️'};
+      showToast(labels[status] || 'Updated', 'success');
       filterRows();
     }
-  } catch (e) {
-    console.error(e);
-    showToast('Network error', 'danger');
+  } catch(e) { showToast('Network error','danger'); }
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function updateStatusBadge(id, status) {
+  const badge = document.getElementById(`status-${id}`);
+  if (badge) {
+    badge.className   = `status-badge status-${status}`;
+    badge.textContent = status === 'rejected' ? 'Hidden' : status.charAt(0).toUpperCase() + status.slice(1);
   }
 }
 
-// ── TOAST ─────────────────────────────────────────────────────────────────────
-function showToast(msg, type = 'success') {
+function addPermDeleteBtn(id, row) {
+  if (!row || document.getElementById(`perm-${id}`)) return;
+  const name = row.querySelector('[style*="cursive"]')?.textContent?.trim() || '';
+  const actionDiv = row.querySelector('.action-btns');
+  if (!actionDiv) return;
+  const btn     = document.createElement('button');
+  btn.className = 'act-btn perm-delete-btn';
+  btn.id        = `perm-${id}`;
+  btn.title     = 'Delete permanently';
+  btn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+  btn.onclick   = () => permanentDelete(id, name);
+  actionDiv.appendChild(btn);
+}
+
+function showToast(msg, type='success') {
   const old = document.getElementById('adminToast');
   if (old) old.remove();
-
-  const colors = {
-    success: 'rgba(76,175,80,0.15)',
-    danger:  'rgba(244,67,54,0.15)',
-  };
-
+  const colors = { success:'rgba(76,175,80,0.15)', danger:'rgba(244,67,54,0.15)' };
   const t = document.createElement('div');
   t.id = 'adminToast';
-  t.style.cssText = `
-    position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;
-    background:${colors[type] || colors.success};
-    border:1px solid rgba(226,201,126,.22);
-    border-radius:12px;padding:.75rem 1.25rem;
-    color:var(--text-primary);font-size:.88rem;
-    backdrop-filter:blur(12px);max-width:320px;
-    animation:fadeInUp .3s ease;box-shadow:0 8px 24px rgba(0,0,0,.4);
-  `;
+  t.style.cssText = `position:fixed;bottom:1.5rem;right:1.5rem;z-index:9999;
+    background:${colors[type]||colors.success};border:1px solid rgba(226,201,126,.22);
+    border-radius:12px;padding:.75rem 1.25rem;color:var(--text-primary);font-size:.88rem;
+    backdrop-filter:blur(12px);max-width:320px;box-shadow:0 8px 24px rgba(0,0,0,.4)`;
   t.textContent = msg;
   document.body.appendChild(t);
-
-  setTimeout(() => {
-    t.style.opacity    = '0';
-    t.style.transition = 'opacity .3s';
-    setTimeout(() => t.remove(), 320);
-  }, 3500);
+  setTimeout(() => { t.style.opacity='0'; t.style.transition='opacity .3s'; setTimeout(()=>t.remove(),320); }, 3500);
 }
 </script>
 </body>

@@ -425,6 +425,57 @@ def admin_status(sig_id):
     return jsonify({'success': False}), 400
 
 
+@app.route('/admin/upload-image/<int:sig_id>', methods=['POST'])
+@csrf.exempt
+@admin_required
+def admin_upload_image(sig_id):
+    """
+    Admin can upload/replace profile photo or signature image for any user.
+    Accepts multipart form: type=photo|signature, file=<image>
+    """
+    sig       = Signature.query.get_or_404(sig_id)
+    img_type  = request.form.get('type', '')   # 'photo' or 'signature'
+    file      = request.files.get('file')
+
+    if img_type not in ('photo', 'signature'):
+        return jsonify({'success': False, 'error': 'Invalid type'}), 400
+    if not file or file.filename == '':
+        return jsonify({'success': False, 'error': 'No file selected'}), 400
+
+    # Read file and convert to base64 data URL
+    try:
+        file_bytes = file.read()
+        mime       = file.content_type or 'image/png'
+        b64        = base64.b64encode(file_bytes).decode('utf-8')
+        data_url   = f'data:{mime};base64,{b64}'
+    except Exception as e:
+        return jsonify({'success': False, 'error': f'File read error: {e}'}), 500
+
+    folder    = 'photos' if img_type == 'photo' else 'signatures'
+    new_url   = save_image(data_url, folder)
+
+    if not new_url:
+        return jsonify({'success': False, 'error': 'Upload failed — check Cloudinary config'}), 500
+
+    # Delete old image from Cloudinary before replacing
+    if img_type == 'photo' and sig.profile_photo:
+        delete_cloudinary_image(sig.profile_photo)
+        sig.profile_photo = new_url
+    elif img_type == 'signature' and sig.signature_image:
+        delete_cloudinary_image(sig.signature_image)
+        sig.signature_image = new_url
+    else:
+        # No old image — just set new
+        if img_type == 'photo':
+            sig.profile_photo   = new_url
+        else:
+            sig.signature_image = new_url
+
+    db.session.commit()
+    print(f'✅ Admin uploaded {img_type} for sig id={sig_id}: {new_url}')
+    return jsonify({'success': True, 'url': new_url, 'type': img_type})
+
+
 @app.route('/admin/export')
 @admin_required
 def admin_export():
