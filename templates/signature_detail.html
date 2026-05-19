@@ -27,8 +27,15 @@
          style="background:linear-gradient(135deg,{{ tc.from }} 0%,#0d0d1a 100%)">
       <div class="detail-banner-inner">
         {% if sig.profile_photo %}
-          <img src="{{ url_for('static', filename=sig.profile_photo) }}"
-               class="detail-avatar-img" alt="{{ sig.name }}"/>
+          {% if sig.profile_photo.startswith('http') %}
+            <img src="{{ sig.profile_photo }}"
+                 class="detail-avatar-img" alt="{{ sig.name }}"
+                 onerror="this.outerHTML='<div class=detail-avatar style=background:linear-gradient(135deg,{{ tc.from }},{{ tc.accent }})>{{ sig.name[0].upper() }}</div>'"/>
+          {% else %}
+            <img src="{{ url_for('static', filename=sig.profile_photo) }}"
+                 class="detail-avatar-img" alt="{{ sig.name }}"
+                 onerror="this.outerHTML='<div class=detail-avatar style=background:linear-gradient(135deg,{{ tc.from }},{{ tc.accent }})>{{ sig.name[0].upper() }}</div>'"/>
+          {% endif %}
         {% else %}
           <div class="detail-avatar" style="background:linear-gradient(135deg,{{ tc.from }},{{ tc.accent }})">
             {{ sig.name[0].upper() }}
@@ -62,8 +69,15 @@
       {% if sig.signature_image %}
       <div class="detail-sig-wrap mb-4"
            style="background:{{ tc.from }};border-color:{{ tc.accent }}22">
-        <img src="{{ url_for('static', filename=sig.signature_image) }}"
-             alt="{{ sig.name }}'s signature" class="detail-sig"/>
+        {% if sig.signature_image.startswith('http') %}
+          <img src="{{ sig.signature_image }}"
+               alt="{{ sig.name }}'s signature" class="detail-sig"
+               onerror="this.parentElement.innerHTML='<p class=text-muted text-center py-3>Image unavailable</p>'"/>
+        {% else %}
+          <img src="{{ url_for('static', filename=sig.signature_image) }}"
+               alt="{{ sig.name }}'s signature" class="detail-sig"
+               onerror="this.parentElement.innerHTML='<p class=text-muted text-center py-3>Image unavailable</p>'"/>
+        {% endif %}
       </div>
       {% endif %}
 

@@ -134,11 +134,14 @@ fetch('/api/signatures?page=1')
         orange:'linear-gradient(135deg,#2a1400,#180a00)',
       };
       const bg = themes[s.card_theme] || themes.gold;
+      // ✅ Use URL directly — to_dict() already returns correct Cloudinary/local URL
       const avatar = s.profile_photo
-        ? `<img src="/static/${s.profile_photo}" class="preview-avatar" alt="photo"/>`
+        ? `<img src="${s.profile_photo}" class="preview-avatar" alt="photo"
+               onerror="this.outerHTML='<div class=preview-avatar-placeholder>${s.name[0].toUpperCase()}</div>'"/>`
         : `<div class="preview-avatar-placeholder">${s.name[0].toUpperCase()}</div>`;
       const sig = s.signature_image
-        ? `<img src="/static/${s.signature_image}" class="preview-sig" alt="sig"/>`
+        ? `<img src="${s.signature_image}" class="preview-sig" alt="sig"
+               onerror="this.outerHTML='<div class=preview-sig no-img><i class=fas fa-signature></i></div>'"/>`
         : `<div class="preview-sig no-img"><i class="fas fa-signature"></i></div>`;
       wrap.insertAdjacentHTML('beforeend', `
         <div class="col-md-4 col-sm-6" data-aos="zoom-in">
