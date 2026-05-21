@@ -53,7 +53,6 @@ farewellink/
         └── dashboard.html        ← Stats, table, approve/reject/delete
 ```
 
----
 
 ## 🗃️ Database Schema
 
